@@ -546,10 +546,153 @@ body {
 /* モバイル対応 - リサーチ */
 @media (max-width: 768px) {
     .tab-nav { padding: 0 12px; top: 52px; }
-    .tab-btn { padding: 12px 16px; font-size: 13px; }
+    .tab-btn { padding: 12px 14px; font-size: 12px; }
     .result-card { flex-direction: column; }
     .result-img { width: 100%; height: 120px; }
     .result-actions { flex-direction: row; }
     .research-info { flex-direction: column; gap: 4px; }
+    .scan-dashboard { grid-template-columns: repeat(2, 1fr); }
+    .scan-config-row { grid-template-columns: repeat(2, 1fr); }
+    .scan-filters { grid-template-columns: 1fr 1fr; }
 }
 
+/* ===== スキャンタブ ===== */
+.scan-config-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+.scan-config-card h3 { font-size: 15px; margin-bottom: 16px; }
+.scan-config-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.scan-filters {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.scan-config-item { display: flex; flex-direction: column; gap: 4px; }
+.scan-config-item label { font-size: 11px; font-weight: 700; color: var(--text2); }
+.scan-config-item input {
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    width: 100%;
+}
+.scan-config-item input:focus { border-color: var(--accent); }
+.config-hint { font-size: 10px; color: var(--text2); }
+.btn-scan {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 900;
+    font-family: inherit;
+    cursor: pointer;
+    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    color: #fff;
+    transition: all .2s;
+    letter-spacing: 1px;
+}
+.btn-scan:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(108,92,231,.4); }
+.btn-scan.scanning {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .8; } }
+
+/* ダッシュボード数値 */
+.scan-dashboard {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.scan-stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+}
+.scan-stat-num {
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--accent2);
+}
+.scan-stat-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text2);
+    margin-top: 4px;
+}
+.scan-stat.hit .scan-stat-num { color: var(--green2); }
+.scan-stat.high .scan-stat-num { color: var(--orange); }
+
+/* プログレスバー */
+.scan-progress-bar {
+    height: 6px;
+    background: var(--bg3);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+.scan-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--green2));
+    border-radius: 3px;
+    transition: width .5s ease;
+}
+.scan-status {
+    font-size: 12px;
+    color: var(--text2);
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+/* ソートバー */
+.scan-sort-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.scan-sort-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all .2s;
+}
+.scan-sort-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+.scan-result-count {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text2);
+    font-weight: 700;
+}
+
+/* 利益タグ */
+.result-tag.profit-tag { background: rgba(0,184,148,.2); color: var(--green2); }
+.result-tag.loss-tag { background: rgba(255,107,107,.2); color: var(--red); }

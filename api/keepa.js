@@ -95,7 +95,42 @@ module.exports = async (req, res) => {
             return res.status(200).json({ tokensLeft: data.tokensLeft });
         }
 
-        return res.status(400).json({ error: '不明なアクション', usage: '?action=search&term=xxx or ?action=lookup&asin=xxx' });
+        // Product Finder（条件でASINリストを取得）
+        if (action === 'find') {
+            const minPrice = parseInt(url.searchParams.get('minPrice')) || 1000;
+            const maxPrice = parseInt(url.searchParams.get('maxPrice')) || 10000;
+            const maxRank = parseInt(url.searchParams.get('maxRank')) || 50000;
+            const page = parseInt(url.searchParams.get('page')) || 0;
+
+            const selection = JSON.stringify({
+                CURRENT_Amazon_PRICE_min: minPrice,
+                CURRENT_Amazon_PRICE_max: maxPrice,
+                CURRENT_SALES_RANK_min: 1,
+                CURRENT_SALES_RANK_max: maxRank,
+                CURRENT_Amazon_PRICE_isActive: true,
+                productType: [0],
+                perPage: 50,
+                page: page,
+            });
+
+            const data = await keepaFetch('query', { selection });
+            return res.status(200).json({
+                asinList: data.asinList || [],
+                totalResults: data.totalResults || 0,
+                tokensLeft: data.tokensLeft,
+            });
+        }
+
+        // バッチASIN詳細取得（最大100件）
+        if (action === 'batch') {
+            const asins = url.searchParams.get('asins');
+            if (!asins) return res.status(400).json({ error: 'ASINリストが必要です' });
+            const data = await keepaFetch('product', { asin: asins, stats: 180 });
+            const products = (data.products || []).map(formatProduct).filter(p => p.sellingPrice);
+            return res.status(200).json({ products, tokensLeft: data.tokensLeft });
+        }
+
+        return res.status(400).json({ error: '不明なアクション' });
     } catch (err) {
         console.error('Keepa API Error:', err);
         return res.status(500).json({ error: err.message || 'サーバーエラー' });

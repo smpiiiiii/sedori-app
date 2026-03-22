@@ -432,12 +432,17 @@
         // タブコンテンツ
         document.getElementById('calcSection').style.display = tabName === 'calc' ? '' : 'none';
         document.getElementById('researchSection').style.display = tabName === 'research' ? '' : 'none';
+        document.getElementById('scanSection').style.display = tabName === 'scan' ? '' : 'none';
         // ヘッダー
         var title = document.getElementById('pageTitle');
         var addBtn = document.getElementById('addBtn');
         var csvBtn = document.getElementById('csvBtn');
         if (tabName === 'research') {
             title.textContent = '🔍 リサーチ';
+            addBtn.style.display = 'none';
+            csvBtn.style.display = 'none';
+        } else if (tabName === 'scan') {
+            title.textContent = '🚀 利益商品リサーチ';
             addBtn.style.display = 'none';
             csvBtn.style.display = 'none';
         } else {
@@ -531,7 +536,6 @@
                     '<a class="btn-amazon" href="' + escHtml(p.url) + '" target="_blank">🔗 Amazon</a>' +
                 '</div>';
 
-            // 利益計算ボタンのイベント
             card.querySelector('.btn-add-calc').addEventListener('click', function() {
                 var title = this.getAttribute('data-title');
                 var asin = this.getAttribute('data-asin');
@@ -540,6 +544,230 @@
             });
 
             searchResults.appendChild(card);
+        });
+    }
+
+    // ===== 自動スキャン機能 =====
+    var scanState = {
+        running: false,
+        asinList: [],
+        processed: 0,
+        results: [],
+        sortKey: 'newest',
+        timer: null,
+    };
+
+    var scanStartBtn = document.getElementById('scanStartBtn');
+    if (scanStartBtn) {
+        scanStartBtn.addEventListener('click', function() {
+            if (scanState.running) {
+                stopScan();
+            } else {
+                startScan();
+            }
+        });
+    }
+
+    // ソートボタン
+    document.querySelectorAll('.scan-sort-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.scan-sort-btn').forEach(function(b) { b.classList.remove('active'); });
+            this.classList.add('active');
+            scanState.sortKey = this.getAttribute('data-sort');
+            renderScanResults();
+        });
+    });
+
+    function startScan() {
+        var minPrice = parseInt(document.getElementById('scanMinPrice').value) || 1000;
+        var maxPrice = parseInt(document.getElementById('scanMaxPrice').value) || 10000;
+        var maxRank = parseInt(document.getElementById('scanMaxRank').value) || 50000;
+
+        scanState.running = true;
+        scanState.asinList = [];
+        scanState.processed = 0;
+        scanState.results = [];
+        updateScanUI();
+
+        scanStartBtn.textContent = '⏹ スキャン停止';
+        scanStartBtn.classList.add('scanning');
+        document.getElementById('scanStatus').textContent = '🔍 商品リストを取得中...';
+
+        // Step 1: Product Finderで対象ASINリストを取得
+        fetch('/api/keepa?action=find&minPrice=' + minPrice + '&maxPrice=' + maxPrice + '&maxRank=' + maxRank)
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    document.getElementById('scanStatus').textContent = '❌ ' + data.error;
+                    stopScan();
+                    return;
+                }
+                scanState.asinList = data.asinList || [];
+                document.getElementById('scanTotal').textContent = scanState.asinList.length;
+                document.getElementById('scanStatus').textContent = '🚀 ' + scanState.asinList.length + '件の商品をスキャン中...';
+
+                if (scanState.asinList.length === 0) {
+                    document.getElementById('scanStatus').textContent = '❌ 条件に合う商品が見つかりませんでした';
+                    stopScan();
+                    return;
+                }
+
+                // Step 2: バッチで詳細を取得（10件ずつ、1分間隔）
+                processBatch(0);
+            })
+            .catch(function(err) {
+                document.getElementById('scanStatus').textContent = '❌ エラー: ' + err.message;
+                stopScan();
+            });
+    }
+
+    function processBatch(startIdx) {
+        if (!scanState.running) return;
+        if (startIdx >= scanState.asinList.length) {
+            document.getElementById('scanStatus').textContent = '✅ スキャン完了！';
+            stopScan();
+            return;
+        }
+
+        var batchSize = 10;
+        var batch = scanState.asinList.slice(startIdx, startIdx + batchSize);
+        var asinsStr = batch.join(',');
+
+        document.getElementById('scanStatus').textContent =
+            '🔍 スキャン中... (' + (startIdx + 1) + '-' + Math.min(startIdx + batchSize, scanState.asinList.length) +
+            ' / ' + scanState.asinList.length + ')';
+
+        fetch('/api/keepa?action=batch&asins=' + encodeURIComponent(asinsStr))
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (!scanState.running) return;
+
+                var costRate = (parseInt(document.getElementById('scanCostRate').value) || 60) / 100;
+                var minProfit = parseInt(document.getElementById('scanMinProfit').value) || 500;
+                var minProfitRate = parseInt(document.getElementById('scanMinProfitRate').value) || 10;
+
+                (data.products || []).forEach(function(p) {
+                    // 想定仕入値を計算（販売価格のX%）
+                    var estimatedCost = Math.round(p.sellingPrice * costRate);
+                    var amazonFee = Math.round(p.sellingPrice * 0.15);
+                    var fbaFee = 421; // 標準サイズ想定
+                    var profit = p.sellingPrice - estimatedCost - amazonFee - fbaFee;
+                    var profitRate = p.sellingPrice > 0 ? Math.round(profit / p.sellingPrice * 100) : 0;
+
+                    p.estimatedCost = estimatedCost;
+                    p.profit = profit;
+                    p.profitRate = profitRate;
+                    p.foundAt = Date.now();
+
+                    // フィルター: 利益がある商品だけ追加
+                    if (profit >= minProfit && profitRate >= minProfitRate) {
+                        scanState.results.push(p);
+                    }
+                });
+
+                scanState.processed += batch.length;
+                updateScanUI();
+                renderScanResults();
+
+                if (data.tokensLeft !== undefined && data.tokensLeft <= 0) {
+                    // トークンが切れたら60秒待つ
+                    document.getElementById('scanStatus').textContent =
+                        '⏳ APIトークン回復待ち (60秒)... (' + scanState.processed + '/' + scanState.asinList.length + ')';
+                    scanState.timer = setTimeout(function() {
+                        processBatch(startIdx + batchSize);
+                    }, 62000);
+                } else {
+                    // トークンがあればすぐ次へ
+                    scanState.timer = setTimeout(function() {
+                        processBatch(startIdx + batchSize);
+                    }, 2000);
+                }
+            })
+            .catch(function(err) {
+                if (!scanState.running) return;
+                document.getElementById('scanStatus').textContent = '⚠️ エラー、60秒後にリトライ: ' + err.message;
+                scanState.timer = setTimeout(function() {
+                    processBatch(startIdx + batchSize);
+                }, 62000);
+            });
+    }
+
+    function stopScan() {
+        scanState.running = false;
+        if (scanState.timer) {
+            clearTimeout(scanState.timer);
+            scanState.timer = null;
+        }
+        scanStartBtn.textContent = '🚀 スキャン開始';
+        scanStartBtn.classList.remove('scanning');
+    }
+
+    function updateScanUI() {
+        var total = scanState.asinList.length;
+        var searched = scanState.processed;
+        var hits = scanState.results.length;
+        var highProfit = scanState.results.filter(function(r) { return r.profitRate >= 20; }).length;
+
+        document.getElementById('scanTotal').textContent = total;
+        document.getElementById('scanSearched').textContent = searched;
+        document.getElementById('scanHits').textContent = hits;
+        document.getElementById('scanHighProfit').textContent = highProfit;
+        document.getElementById('scanResultCount').textContent = hits + '件';
+
+        // プログレスバー
+        var pct = total > 0 ? Math.round(searched / total * 100) : 0;
+        document.getElementById('scanProgressFill').style.width = pct + '%';
+    }
+
+    function renderScanResults() {
+        var container = document.getElementById('scanResults');
+        if (!container) return;
+        container.innerHTML = '';
+
+        var sorted = scanState.results.slice();
+        if (scanState.sortKey === 'profit') {
+            sorted.sort(function(a, b) { return b.profit - a.profit; });
+        } else if (scanState.sortKey === 'rate') {
+            sorted.sort(function(a, b) { return b.profitRate - a.profitRate; });
+        } else {
+            sorted.sort(function(a, b) { return b.foundAt - a.foundAt; });
+        }
+
+        sorted.forEach(function(p) {
+            var card = document.createElement('div');
+            card.className = 'result-card';
+
+            var profitClass = p.profit >= 0 ? 'profit-tag' : 'loss-tag';
+            var profitSign = p.profit >= 0 ? '+' : '';
+
+            card.innerHTML =
+                (p.imageUrl ? '<img class="result-img" src="' + escHtml(p.imageUrl) + '" alt="" onerror="this.style.display=\'none\'">' : '') +
+                '<div class="result-info">' +
+                    '<div class="result-title">' + escHtml(p.title) + '</div>' +
+                    '<div class="result-meta">' +
+                        '<span class="result-tag price">💰 ¥' + (p.sellingPrice || 0).toLocaleString() + '</span>' +
+                        '<span class="result-tag ' + profitClass + '">' + profitSign + '¥' + (p.profit || 0).toLocaleString() + ' (' + p.profitRate + '%)</span>' +
+                        '<span class="result-tag rank">📈 #' + (p.salesRank || 0).toLocaleString() + '</span>' +
+                    '</div>' +
+                    '<div style="font-size:11px;color:var(--text2)">' +
+                        '仕入(想定): ¥' + (p.estimatedCost || 0).toLocaleString() +
+                        ' | ASIN: ' + escHtml(p.asin) +
+                    '</div>' +
+                '</div>' +
+                '<div class="result-actions">' +
+                    '<button class="btn-add-calc" data-title="' + escHtml(p.title).replace(/"/g, '&quot;') + '" data-asin="' + escHtml(p.asin) + '" data-price="' + (p.sellingPrice || '') + '">📊 利益計算</button>' +
+                    '<a class="btn-amazon" href="' + escHtml(p.url) + '" target="_blank">🔗 Amazon</a>' +
+                '</div>';
+
+            card.querySelector('.btn-add-calc').addEventListener('click', function() {
+                sedoriApp.addProductDirect(
+                    this.getAttribute('data-title'),
+                    this.getAttribute('data-asin'),
+                    this.getAttribute('data-price')
+                );
+            });
+
+            container.appendChild(card);
         });
     }
 
