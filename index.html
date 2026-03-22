@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>セドリ利益計算</title>
+    <meta name="description" content="セドリ（転売）の利益を自動計算。Amazon手数料・FBA・送料を考慮した正確な利益率を表示。">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ヘッダー -->
+<div class="header">
+    <h1>📦 セドリ利益計算</h1>
+    <div class="header-actions">
+        <button class="btn btn-outline btn-sm" id="csvBtn">📄 <span>CSV</span></button>
+        <button class="btn btn-primary btn-sm" id="addBtn">＋ <span>商品追加</span></button>
+    </div>
+</div>
+
+<!-- コンテンツ -->
+<div class="content">
+    <!-- 統計カード -->
+    <div class="stats-row">
+        <div class="stat-card profit">
+            <div class="stat-label">💰 想定利益</div>
+            <div class="stat-value" id="statProfit">¥0</div>
+            <div class="stat-sub" id="statProfitable">0/0件 利益あり</div>
+        </div>
+        <div class="stat-card revenue">
+            <div class="stat-label">📊 想定売上</div>
+            <div class="stat-value" id="statRevenue">¥0</div>
+        </div>
+        <div class="stat-card items">
+            <div class="stat-label">📦 登録商品</div>
+            <div class="stat-value" id="statItems">0</div>
+        </div>
+        <div class="stat-card rate">
+            <div class="stat-label">📈 平均利益率</div>
+            <div class="stat-value" id="statRate">0%</div>
+        </div>
+    </div>
+
+    <!-- 商品テーブル -->
+    <div class="table-card">
+        <div class="table-header">
+            <h2>商品リスト</h2>
+            <div class="table-actions">
+                <div class="search-box">
+                    <span>🔍</span>
+                    <input type="text" id="searchInput" placeholder="商品名・ASINで検索">
+                </div>
+                <button class="btn btn-ghost btn-sm" id="clearBtn">🗑 全削除</button>
+            </div>
+        </div>
+
+        <div class="filters">
+            <span class="filter-chip active" data-filter="all">すべて</span>
+            <span class="filter-chip" data-filter="profit">💰 利益あり</span>
+            <span class="filter-chip" data-filter="high">🔥 高利益率(20%↑)</span>
+            <span class="filter-chip" data-filter="loss">⚠️ 赤字</span>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th data-sort="name">商品名 ↕</th>
+                    <th>カテゴリ</th>
+                    <th data-sort="buyPrice">仕入値 ↕</th>
+                    <th data-sort="sellPrice">販売価格 ↕</th>
+                    <th data-sort="profit">利益 ↕</th>
+                    <th data-sort="profitRate">利益率 ↕</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="productBody"></tbody>
+        </table>
+
+        <div id="emptyState" class="empty-state">
+            <div class="icon">📦</div>
+            <h3>商品がありません</h3>
+            <p>「＋ 商品追加」ボタンから商品を登録するか、CSVファイルをインポートしてください。</p>
+        </div>
+    </div>
+</div>
+
+<!-- 商品追加モーダル -->
+<div class="modal-overlay hidden" id="addModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>📦 商品を追加</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <form id="addForm">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>商品名 *</label>
+                    <input type="text" id="addName" placeholder="例: Apple AirPods Pro 第2世代" required>
+                </div>
+                <div class="form-group">
+                    <label>ASIN（任意）</label>
+                    <input type="text" id="addASIN" placeholder="例: B0BDHWDR12">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>仕入値（円）*</label>
+                        <input type="number" id="addBuyPrice" placeholder="8000" inputmode="numeric" required>
+                    </div>
+                    <div class="form-group">
+                        <label>販売予想価格（円）*</label>
+                        <input type="number" id="addSellPrice" placeholder="12000" inputmode="numeric" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>カテゴリ</label>
+                        <select id="addCategory"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>FBAサイズ</label>
+                        <select id="addFBA"></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>送料（仕入→FBA倉庫）</label>
+                    <input type="number" id="addShipping" placeholder="0" inputmode="numeric" value="0">
+                </div>
+
+                <!-- 利益プレビュー -->
+                <div class="profit-preview" id="profitPreview" style="display:none">
+                    <h4>💹 利益シミュレーション</h4>
+                    <div class="profit-row"><span>販売価格</span><span id="prevSell">¥0</span></div>
+                    <div class="profit-row"><span>仕入値</span><span id="prevBuy">-¥0</span></div>
+                    <div class="profit-row"><span>Amazon手数料</span><span id="prevAmazon">-¥0</span></div>
+                    <div class="profit-row"><span>FBA手数料</span><span id="prevFBA">-¥0</span></div>
+                    <div class="profit-row"><span>送料</span><span id="prevShip">-¥0</span></div>
+                    <div class="profit-row total"><span>純利益</span><span id="prevProfit">¥0</span></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline modal-close">キャンセル</button>
+                <button type="submit" class="btn btn-success">✅ 追加</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CSVインポートモーダル -->
+<div class="modal-overlay hidden" id="csvModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>📄 CSVインポート</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="csv-dropzone" id="csvDropzone">
+                <div class="icon">📁</div>
+                <p><b>ここにCSVファイルをドロップ</b></p>
+                <p>または クリックして選択</p>
+                <input type="file" id="csvFile" accept=".csv">
+            </div>
+            <div style="margin-top:16px;font-size:12px;color:var(--text2);line-height:1.6">
+                <b>CSVフォーマット:</b><br>
+                1行目: ヘッダー（無視されます）<br>
+                2行目以降: 商品名, 仕入値, 販売価格, ASIN(任意), カテゴリ(任意)<br>
+                <div style="margin-top:8px;background:var(--bg3);padding:10px;border-radius:8px;font-family:monospace;font-size:11px">
+                    商品名,仕入値,販売価格,ASIN,カテゴリ<br>
+                    AirPods Pro,25000,35000,B0BDHWDR12,electronics<br>
+                    ポケカ BOX,5000,8000,,cards
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
