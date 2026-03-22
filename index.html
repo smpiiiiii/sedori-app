@@ -11,15 +11,21 @@
 
 <!-- ヘッダー -->
 <div class="header">
-    <h1>📦 セドリ利益計算</h1>
+    <h1 id="pageTitle">📦 セドリ利益計算</h1>
     <div class="header-actions">
         <button class="btn btn-outline btn-sm" id="csvBtn">📄 <span>CSV</span></button>
         <button class="btn btn-primary btn-sm" id="addBtn">＋ <span>商品追加</span></button>
     </div>
 </div>
 
-<!-- コンテンツ -->
-<div class="content">
+<!-- タブナビ -->
+<div class="tab-nav">
+    <button class="tab-btn active" data-tab="calc" id="tabCalc">📊 利益計算</button>
+    <button class="tab-btn" data-tab="research" id="tabResearch">🔍 リサーチ</button>
+</div>
+
+<!-- ===== 利益計算タブ ===== -->
+<div class="content tab-content active" id="calcSection">
     <!-- 統計カード -->
     <div class="stats-row">
         <div class="stat-card profit">
@@ -82,6 +88,30 @@
             <p>「＋ 商品追加」ボタンから商品を登録するか、CSVファイルをインポートしてください。</p>
         </div>
     </div>
+</div>
+
+<!-- ===== リサーチタブ ===== -->
+<div class="content tab-content" id="researchSection" style="display:none">
+    <!-- リサーチ検索バー -->
+    <div class="research-search-card">
+        <div class="research-search-bar">
+            <input type="text" id="keepaSearchInput" placeholder="商品名で検索（例: フェイスパック）" class="research-input">
+            <button class="btn btn-primary" id="keepaSearchBtn">🔍 検索</button>
+        </div>
+        <div class="research-info">
+            <span id="tokenInfo">💰 トークン: --</span>
+            <span class="research-hint">※ 1分に1回検索可能（Keepa API制限）</span>
+        </div>
+    </div>
+
+    <!-- 検索中 -->
+    <div id="searchLoading" class="research-loading" style="display:none">
+        <div class="spinner"></div>
+        <p>Amazon商品を検索中...</p>
+    </div>
+
+    <!-- 検索結果 -->
+    <div id="searchResults" class="research-results"></div>
 </div>
 
 <!-- 商品追加モーダル -->

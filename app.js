@@ -409,8 +409,139 @@
 
     // ===== グローバルAPI =====
     window.sedoriApp = {
-        deleteProduct: deleteProduct
+        deleteProduct: deleteProduct,
+        addProductDirect: function(name, asin, sellPrice) {
+            // リサーチタブから利益計算に直接追加（仕入値は手入力）
+            document.getElementById('addModal').classList.remove('hidden');
+            document.getElementById('addName').value = name;
+            document.getElementById('addASIN').value = asin || '';
+            document.getElementById('addSellPrice').value = sellPrice || '';
+            document.getElementById('addBuyPrice').value = '';
+            document.getElementById('addBuyPrice').focus();
+            // 利益計算タブに切り替え
+            switchTab('calc');
+        }
     };
+
+    // ===== タブ切り替え =====
+    function switchTab(tabName) {
+        // タブボタン
+        document.querySelectorAll('.tab-btn').forEach(function(btn) {
+            btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
+        });
+        // タブコンテンツ
+        document.getElementById('calcSection').style.display = tabName === 'calc' ? '' : 'none';
+        document.getElementById('researchSection').style.display = tabName === 'research' ? '' : 'none';
+        // ヘッダー
+        var title = document.getElementById('pageTitle');
+        var addBtn = document.getElementById('addBtn');
+        var csvBtn = document.getElementById('csvBtn');
+        if (tabName === 'research') {
+            title.textContent = '🔍 リサーチ';
+            addBtn.style.display = 'none';
+            csvBtn.style.display = 'none';
+        } else {
+            title.textContent = '📦 セドリ利益計算';
+            addBtn.style.display = '';
+            csvBtn.style.display = '';
+        }
+    }
+
+    // タブイベント
+    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            switchTab(this.getAttribute('data-tab'));
+        });
+    });
+
+    // ===== Keepa検索 =====
+    var keepaSearchBtn = document.getElementById('keepaSearchBtn');
+    var keepaSearchInput = document.getElementById('keepaSearchInput');
+    var searchLoading = document.getElementById('searchLoading');
+    var searchResults = document.getElementById('searchResults');
+
+    if (keepaSearchBtn) {
+        keepaSearchBtn.addEventListener('click', doKeepaSearch);
+        keepaSearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') doKeepaSearch();
+        });
+    }
+
+    function doKeepaSearch() {
+        var term = keepaSearchInput.value.trim();
+        if (!term) { alert('検索キーワードを入力してください'); return; }
+
+        searchLoading.style.display = '';
+        searchResults.innerHTML = '';
+        keepaSearchBtn.disabled = true;
+        keepaSearchBtn.textContent = '⏳ 検索中...';
+
+        fetch('/api/keepa?action=search&term=' + encodeURIComponent(term))
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                searchLoading.style.display = 'none';
+                keepaSearchBtn.disabled = false;
+                keepaSearchBtn.textContent = '🔍 検索';
+
+                if (data.error) {
+                    searchResults.innerHTML = '<div class="research-loading"><p>❌ ' + escHtml(data.error) + '</p></div>';
+                    return;
+                }
+                if (data.tokensLeft !== undefined) {
+                    document.getElementById('tokenInfo').textContent = '💰 トークン残量: ' + data.tokensLeft;
+                }
+                renderSearchResults(data.products || []);
+            })
+            .catch(function(err) {
+                searchLoading.style.display = 'none';
+                keepaSearchBtn.disabled = false;
+                keepaSearchBtn.textContent = '🔍 検索';
+                searchResults.innerHTML = '<div class="research-loading"><p>❌ 通信エラー: ' + escHtml(err.message) + '</p></div>';
+            });
+    }
+
+    function renderSearchResults(products) {
+        if (products.length === 0) {
+            searchResults.innerHTML = '<div class="research-loading"><p>商品が見つかりませんでした</p></div>';
+            return;
+        }
+
+        searchResults.innerHTML = '<div style="color:var(--text2);font-size:13px;margin-bottom:8px">📊 ' + products.length + '件の結果</div>';
+
+        products.forEach(function(p) {
+            var card = document.createElement('div');
+            card.className = 'result-card';
+
+            var priceStr = p.amazonPrice ? '¥' + p.amazonPrice.toLocaleString() : (p.newPrice ? '¥' + p.newPrice.toLocaleString() : '-');
+            var rankStr = p.salesRank ? '#' + p.salesRank.toLocaleString() : '-';
+
+            card.innerHTML =
+                (p.imageUrl ? '<img class="result-img" src="' + escHtml(p.imageUrl) + '" alt="" onerror="this.style.display=\'none\'">' : '') +
+                '<div class="result-info">' +
+                    '<div class="result-title">' + escHtml(p.title) + '</div>' +
+                    '<div class="result-meta">' +
+                        '<span class="result-tag price">💰 ' + priceStr + '</span>' +
+                        '<span class="result-tag rank">📈 ' + rankStr + '</span>' +
+                        '<span class="result-tag asin">' + escHtml(p.asin) + '</span>' +
+                    '</div>' +
+                    (p.category ? '<div style="font-size:11px;color:var(--text2)">' + escHtml(p.category) + '</div>' : '') +
+                '</div>' +
+                '<div class="result-actions">' +
+                    '<button class="btn-add-calc" data-title="' + escHtml(p.title).replace(/"/g, '&quot;') + '" data-asin="' + escHtml(p.asin) + '" data-price="' + (p.sellingPrice || '') + '">📊 利益計算</button>' +
+                    '<a class="btn-amazon" href="' + escHtml(p.url) + '" target="_blank">🔗 Amazon</a>' +
+                '</div>';
+
+            // 利益計算ボタンのイベント
+            card.querySelector('.btn-add-calc').addEventListener('click', function() {
+                var title = this.getAttribute('data-title');
+                var asin = this.getAttribute('data-asin');
+                var price = this.getAttribute('data-price');
+                sedoriApp.addProductDirect(title, asin, price);
+            });
+
+            searchResults.appendChild(card);
+        });
+    }
 
     // 起動
     init();

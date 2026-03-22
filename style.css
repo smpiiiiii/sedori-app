@@ -373,3 +373,183 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text2); }
+
+/* タブナビ */
+.tab-nav {
+    display: flex;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    position: sticky;
+    top: 56px;
+    z-index: 99;
+}
+.tab-btn {
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    padding: 14px 20px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all .2s;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active {
+    color: var(--accent2);
+    border-bottom-color: var(--accent);
+}
+
+/* リサーチ検索カード */
+.research-search-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+.research-search-bar {
+    display: flex;
+    gap: 10px;
+}
+.research-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .2s;
+}
+.research-input:focus { border-color: var(--accent); }
+.research-input::placeholder { color: var(--text2); }
+.research-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text2);
+}
+.research-hint { font-style: italic; }
+
+/* リサーチ検索中 */
+.research-loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text2);
+}
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* リサーチ結果カード */
+.research-results {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.result-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    transition: border-color .2s;
+}
+.result-card:hover { border-color: var(--accent); }
+.result-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 10px;
+    object-fit: contain;
+    background: #fff;
+    flex-shrink: 0;
+}
+.result-info { flex: 1; min-width: 0; }
+.result-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.result-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.result-tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.result-tag.price { background: rgba(0,184,148,.15); color: var(--green2); }
+.result-tag.rank { background: rgba(116,185,255,.15); color: var(--blue); }
+.result-tag.asin { background: rgba(108,92,231,.15); color: var(--accent2); }
+.result-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-direction: column;
+}
+.btn-add-calc {
+    background: linear-gradient(135deg, var(--green), #00a381);
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .2s;
+    white-space: nowrap;
+}
+.btn-add-calc:hover { transform: translateY(-1px); }
+.btn-amazon {
+    background: var(--bg3);
+    color: var(--text2);
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .2s;
+    text-decoration: none;
+    text-align: center;
+}
+.btn-amazon:hover { color: var(--text); border-color: var(--text2); }
+
+/* モバイル対応 - リサーチ */
+@media (max-width: 768px) {
+    .tab-nav { padding: 0 12px; top: 52px; }
+    .tab-btn { padding: 12px 16px; font-size: 13px; }
+    .result-card { flex-direction: column; }
+    .result-img { width: 100%; height: 120px; }
+    .result-actions { flex-direction: row; }
+    .research-info { flex-direction: column; gap: 4px; }
+}
+
