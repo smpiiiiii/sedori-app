@@ -358,22 +358,37 @@ module.exports = async (req, res) => {
                     }
 
                     items.forEach(item => {
-                        const wholesale = item.price || item.wholesale_price || item.unit_price || 0;
-                        const retail = item.msrp || item.retail_price || item.suggested_retail_price || 0;
+                        // setフィールドから価格を抽出
+                        const sets = item.set || [];
+                        let wholesale = 0;
+                        let retail = 0;
+                        let minLot = 1;
+                        if (Array.isArray(sets) && sets.length > 0) {
+                            const s = sets[0];
+                            wholesale = s.price || s.wholesale_price || s.net_price || 0;
+                            retail = s.retail_price || s.reference_price || s.msrp || 0;
+                            minLot = s.min_quantity || s.lot || s.min_lot || 1;
+                        }
+
+                        // デバッグ: 最初の商品のsetフィールドを保存
+                        if (allItems.length === 0 && sets.length > 0 && !debugInfo.sampleSet) {
+                            debugInfo.sampleSet = JSON.stringify(sets[0]).substring(0, 400);
+                        }
+
                         const margin = retail > 0 ? Math.round((1 - wholesale / retail) * 100) : 0;
                         allItems.push({
-                            id: item.direct_item_id || item.id || item.item_id,
-                            name: item.item_name || item.name || item.title || '',
+                            id: item.product_id || item.direct_item_id || '',
+                            name: item.product_name || '',
                             wholesale_price: wholesale,
                             retail_price: retail,
                             margin: margin,
-                            supplier: supName,
+                            supplier: item.shop_name || supName,
                             supplier_id: supId,
-                            image: item.image_url || item.main_image_url || item.thumbnail_url || null,
-                            jan: item.jan_code || item.branch_code || item.barcode || '',
-                            category: item.category_name || item.category || '',
-                            min_lot: item.min_lot || item.minimum_order || 1,
-                            netsea_url: `https://www.netsea.jp/shop/${supId}/detail/${item.direct_item_id || item.id || item.item_id}`,
+                            image: item.image_url_1 || null,
+                            jan: item.jan_code || '',
+                            category: item.category_id || '',
+                            min_lot: minLot,
+                            netsea_url: item.product_url || `https://www.netsea.jp/shop/${supId}/${item.product_id}`,
                         });
                     });
                 } catch (e) {
