@@ -1,5 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/keepa", "destination": "/api/keepa.js" }
+    { "source": "/api/keepa", "destination": "/api/keepa.js" },
+    { "source": "/api/netsea", "destination": "/api/netsea.js" }
   ]
 }

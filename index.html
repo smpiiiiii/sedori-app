@@ -35,6 +35,7 @@
     <button class="tab-btn active" data-tab="calc" id="tabCalc">📊 利益計算</button>
     <button class="tab-btn" data-tab="research" id="tabResearch">🔍 リサーチ</button>
     <button class="tab-btn" data-tab="scan" id="tabScan">🚀 スキャン</button>
+    <button class="tab-btn" data-tab="netsea" id="tabNetsea">🏭 NETSEA</button>
 </div>
 
 <!-- ===== 利益計算タブ ===== -->
@@ -204,6 +205,64 @@
     <div id="scanResults" class="research-results"></div>
 </div>
 
+<!-- ===== NETSEAタブ ===== -->
+<div class="content tab-content" id="netseaSection" style="display:none">
+    <!-- 接続ステータス -->
+    <div class="netsea-status-bar" id="netseaStatusBar">
+        <span id="netseaStatusText">🔄 接続確認中...</span>
+    </div>
+
+    <!-- 検索カード -->
+    <div class="netsea-search-card">
+        <h3>🏭 NETSEA商品検索</h3>
+        <div class="netsea-search-row">
+            <input type="text" id="netseaKeyword" placeholder="キーワード（例: フェイスパック, ハンドソープ）" class="research-input">
+            <button class="btn btn-primary" id="netseaSearchBtn">🔍 検索</button>
+        </div>
+        <div class="netsea-filters">
+            <div class="netsea-filter-item">
+                <label>カテゴリ</label>
+                <select id="netseaCategoryFilter">
+                    <option value="">すべて</option>
+                </select>
+            </div>
+            <div class="netsea-filter-item">
+                <label>卸値 最低</label>
+                <input type="number" id="netseaMinPrice" placeholder="0" inputmode="numeric">
+            </div>
+            <div class="netsea-filter-item">
+                <label>卸値 最高</label>
+                <input type="number" id="netseaMaxPrice" placeholder="10000" inputmode="numeric">
+            </div>
+        </div>
+    </div>
+
+    <!-- 検索中 -->
+    <div id="netseaLoading" class="research-loading" style="display:none">
+        <div class="spinner"></div>
+        <p>NETSEA商品を検索中...</p>
+    </div>
+
+    <!-- 検索結果 -->
+    <div id="netseaResults" class="research-results"></div>
+
+    <!-- Amazon比較モーダル -->
+    <div class="modal-overlay hidden" id="netseaCompareModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>📊 Amazon価格比較</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="netseaCompareBody">
+                <div class="research-loading">
+                    <div class="spinner"></div>
+                    <p>Amazon価格を取得中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- 商品追加モーダル -->
 <div class="modal-overlay hidden" id="addModal">
     <div class="modal">
@@ -294,5 +353,6 @@
 </div>
 
 <script src="app.js"></script>
+<script src="netsea-tab.js"></script>
 </body>
 </html>

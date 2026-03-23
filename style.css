@@ -696,3 +696,171 @@ body {
 /* 利益タグ */
 .result-tag.profit-tag { background: rgba(0,184,148,.2); color: var(--green2); }
 .result-tag.loss-tag { background: rgba(255,107,107,.2); color: var(--red); }
+
+/* ===== NETSEAタブ ===== */
+.netsea-status-bar {
+    padding: 10px 16px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    transition: all .3s;
+}
+.netsea-status-bar.connected { background: rgba(0,184,148,.12); color: var(--green2); border: 1px solid rgba(0,184,148,.25); }
+.netsea-status-bar.demo { background: rgba(253,203,110,.12); color: var(--orange); border: 1px solid rgba(253,203,110,.25); }
+.netsea-status-bar.error { background: rgba(255,107,107,.12); color: var(--red); border: 1px solid rgba(255,107,107,.25); }
+
+.netsea-search-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+.netsea-search-card h3 {
+    font-size: 16px;
+    margin-bottom: 14px;
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.netsea-search-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.netsea-filters {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 10px;
+}
+.netsea-filter-item { display: flex; flex-direction: column; gap: 4px; }
+.netsea-filter-item label { font-size: 11px; font-weight: 700; color: var(--text2); }
+.netsea-filter-item select,
+.netsea-filter-item input {
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+}
+.netsea-filter-item select:focus,
+.netsea-filter-item input:focus { border-color: #f39c12; }
+
+.netsea-mock-notice {
+    background: rgba(253,203,110,.1);
+    border: 1px dashed rgba(253,203,110,.4);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--orange);
+    text-align: center;
+}
+
+.netsea-result-count {
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+/* NETSEA商品カード */
+.netsea-item-card { border-left: 3px solid #f39c12; }
+.netsea-item-card:hover { border-left-color: #e67e22; }
+
+.result-tag.netsea-wholesale { background: rgba(243,156,18,.18); color: #f39c12; }
+.result-tag.netsea-retail { background: rgba(116,185,255,.15); color: var(--blue); }
+.result-tag.netsea-margin { background: rgba(0,184,148,.15); color: var(--green2); }
+
+.netsea-item-detail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 4px;
+}
+
+.btn-compare-amazon {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .2s;
+    white-space: nowrap;
+}
+.btn-compare-amazon:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(243,156,18,.35); }
+
+/* Amazon比較モーダル */
+.netsea-compare-result { padding: 4px 0; }
+.netsea-compare-header {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+.netsea-compare-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 10px;
+    object-fit: contain;
+    background: #fff;
+    display: block;
+    margin: 0 auto 16px;
+}
+.netsea-compare-prices {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+.netsea-price-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 6px 0;
+    align-items: center;
+}
+.netsea-price-row.total {
+    border-top: 2px solid var(--border);
+    margin-top: 8px;
+    padding-top: 12px;
+    font-weight: 900;
+    font-size: 16px;
+}
+.netsea-price-row.total.positive { color: var(--green2); }
+.netsea-price-row.total.negative { color: var(--red); }
+.netsea-price.wholesale { color: #f39c12; font-weight: 700; }
+.netsea-price.amazon { color: var(--blue); font-weight: 700; }
+.netsea-compare-not-found {
+    text-align: center;
+    padding: 30px 0;
+    color: var(--text2);
+}
+.netsea-compare-not-found .hint { font-size: 12px; margin-top: 8px; }
+.netsea-compare-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+.netsea-compare-actions .btn { flex: 1; justify-content: center; }
+
+/* NETSEA モバイル対応 */
+@media (max-width: 768px) {
+    .netsea-filters { grid-template-columns: 1fr; }
+    .netsea-search-row { flex-direction: column; }
+    .netsea-compare-actions { flex-direction: column; }
+}
+

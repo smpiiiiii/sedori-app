@@ -433,6 +433,7 @@
         document.getElementById('calcSection').style.display = tabName === 'calc' ? '' : 'none';
         document.getElementById('researchSection').style.display = tabName === 'research' ? '' : 'none';
         document.getElementById('scanSection').style.display = tabName === 'scan' ? '' : 'none';
+        document.getElementById('netseaSection').style.display = tabName === 'netsea' ? '' : 'none';
         // ヘッダー
         var title = document.getElementById('pageTitle');
         var addBtn = document.getElementById('addBtn');
@@ -443,6 +444,10 @@
             csvBtn.style.display = 'none';
         } else if (tabName === 'scan') {
             title.textContent = '🚀 利益商品リサーチ';
+            addBtn.style.display = 'none';
+            csvBtn.style.display = 'none';
+        } else if (tabName === 'netsea') {
+            title.textContent = '🏭 NETSEA卸売リサーチ';
             addBtn.style.display = 'none';
             csvBtn.style.display = 'none';
         } else {
