@@ -381,19 +381,26 @@ module.exports = async (req, res) => {
                 });
             }
 
-            // 粗利率の高い順にソート（卸値あるものを優先）
+            // ソート: 卸値あり → JAN付き → 粗利率高い順
             allItems.sort((a, b) => {
                 if (a.wholesale_price > 0 && b.wholesale_price === 0) return -1;
                 if (a.wholesale_price === 0 && b.wholesale_price > 0) return 1;
+                // JAN付きを優先
+                const aJan = a.jan && a.jan.length >= 8 ? 1 : 0;
+                const bJan = b.jan && b.jan.length >= 8 ? 1 : 0;
+                if (aJan !== bJan) return bJan - aJan;
                 return b.margin - a.margin;
             });
+
+            const janCount = allItems.filter(i => i.jan && i.jan.length >= 8).length;
 
             return res.status(200).json({
                 items: allItems.slice(0, 50),
                 total: allItems.length,
+                janCount: janCount,
                 suppliersScanned: suppliers.length,
                 suppliersApproved: debugInfo.approved.length,
-                message: `${debugInfo.approved.length}社のサプライヤーから${allItems.length}商品を取得`,
+                message: `${debugInfo.approved.length}社から${allItems.length}商品を取得（JAN付き${janCount}件）`,
                 debug: debugInfo,
             });
         }

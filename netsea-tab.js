@@ -327,11 +327,36 @@
                 }
 
 
-                var debugHtml2 = '';
-                if (data.debug) {
-                    debugHtml2 = '<details style="margin:8px 0;font-size:11px;"><summary>🔧 デバッグ情報</summary><pre style="white-space:pre-wrap;word-break:break-all;max-height:300px;overflow:auto;background:rgba(0,0,0,.3);padding:8px;border-radius:6px;">' + esc(JSON.stringify(data.debug, null, 2)) + '</pre></details>';
+                // JANフィルター付きメッセージ表示
+                var filterHtml = '';
+                if (data.janCount > 0) {
+                    filterHtml = '<div style="margin:8px 0;display:flex;gap:6px;flex-wrap:wrap;">' +
+                        '<button id="janFilterAll" onclick="window._janFilter(false)" class="scan-filter-btn active" style="padding:4px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;font-size:12px;cursor:pointer;">📦 全商品 (' + data.items.length + ')</button>' +
+                        '<button id="janFilterJan" onclick="window._janFilter(true)" class="scan-filter-btn" style="padding:4px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:transparent;color:rgba(255,255,255,.7);font-size:12px;cursor:pointer;">🏷️ JAN付きのみ (' + data.janCount + ')</button>' +
+                    '</div>';
                 }
-                scanResults.innerHTML = '<div class="netsea-result-count">🏭 ' + data.message + '</div>' + debugHtml2;
+                scanResults.innerHTML = '<div class="netsea-result-count">🏭 ' + data.message + '</div>' + filterHtml;
+
+                // フィルター機能
+                window._scanItems = data.items;
+                window._janFilter = function(janOnly) {
+                    var allBtn = document.getElementById('janFilterAll');
+                    var janBtn = document.getElementById('janFilterJan');
+                    if (allBtn && janBtn) {
+                        allBtn.style.background = janOnly ? 'transparent' : 'rgba(255,255,255,.15)';
+                        allBtn.style.color = janOnly ? 'rgba(255,255,255,.7)' : '#fff';
+                        janBtn.style.background = janOnly ? 'rgba(255,255,255,.15)' : 'transparent';
+                        janBtn.style.color = janOnly ? '#fff' : 'rgba(255,255,255,.7)';
+                    }
+                    // カードの表示/非表示
+                    var cards = scanResults.querySelectorAll('.netsea-scan-card');
+                    cards.forEach(function(card, i) {
+                        var item = window._scanItems[i];
+                        if (!item) return;
+                        var hasJan = item.jan && item.jan.length >= 8;
+                        card.style.display = (janOnly && !hasJan) ? 'none' : '';
+                    });
+                };
 
                 data.items.forEach(function(item, idx) {
                     var card = document.createElement('div');
