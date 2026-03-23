@@ -193,35 +193,41 @@ module.exports = async (req, res) => {
             return res.status(200).json({ categories: data.categories || data, isMock: false });
         }
 
-        // ===== 商品検索 =====
+        // ===== 商品検索（supplier_ids必須） =====
         if (action === 'items') {
-            const keyword = url.searchParams.get('keyword') || '';
+            const supplierId = url.searchParams.get('supplier_id') || '';
             const categoryId = url.searchParams.get('category') || '';
             const minPrice = url.searchParams.get('minPrice') || '';
             const maxPrice = url.searchParams.get('maxPrice') || '';
-            const page = url.searchParams.get('page') || '0';
+            const nextItemId = url.searchParams.get('next_id') || '';
 
             if (useMock) {
+                const keyword = url.searchParams.get('keyword') || '';
                 const mockData = getMockItems(keyword, categoryId);
                 return res.status(200).json({ ...mockData, isMock: true });
             }
 
-            // NETSEA API パラメータ
-            const params = {};
-            if (keyword) params.keyword = keyword;
-            if (categoryId) params.categories = categoryId;
-            if (minPrice) params.price_range_from = minPrice;
-            if (maxPrice) params.price_range_to = maxPrice;
-            params.deal_net_shop_flag = 1; // ネット販売可能な商品のみ
+            if (!supplierId) {
+                return res.status(400).json({ error: 'サプライヤーを選択してください' });
+            }
 
-            const data = await netseaFetch('/items', params);
+            // NETSEA API パラメータ（supplier_ids必須）
+            const params = {
+                supplier_ids: [parseInt(supplierId)],
+            };
+            if (categoryId) params.categories = [parseInt(categoryId)];
+            if (minPrice) params.price_range_from = parseInt(minPrice);
+            if (maxPrice) params.price_range_to = parseInt(maxPrice);
+            if (nextItemId) params.next_direct_item_id = parseInt(nextItemId);
+
+            const data = await netseaFetch('/items', params, 'POST');
             const items = (data.items || []).map(item => ({
                 id: item.direct_item_id || item.id,
                 name: item.item_name || item.name || '',
                 wholesale_price: item.price || 0,
                 retail_price: item.msrp || item.retail_price || 0,
                 supplier: item.supplier_name || '',
-                image: item.image_url || null,
+                image: item.image_url || item.main_image_url || null,
                 jan: item.jan_code || item.branch_code || '',
                 category: item.category_name || '',
                 min_lot: item.min_lot || 1,

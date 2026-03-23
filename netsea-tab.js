@@ -1,4 +1,4 @@
-// NETSEAタブ — 商品検索・Amazon価格比較ロジック
+// NETSEAタブ — サプライヤー選択→商品一覧→Amazon価格比較
 (function() {
     'use strict';
 
@@ -13,8 +13,10 @@
     var statusBar = document.getElementById('netseaStatusBar');
     var statusText = document.getElementById('netseaStatusText');
 
-    // ===== 初期化フラグ =====
+    // ===== 状態管理 =====
     var initialized = false;
+    var supplierList = [];
+    var selectedSupplierId = '';
 
     // ===== HTMLエスケープ =====
     function esc(s) {
@@ -23,12 +25,12 @@
         return d.innerHTML;
     }
 
-    // ===== NETSEAタブ初期化（タブ切替時に呼ばれる） =====
+    // ===== NETSEAタブ初期化 =====
     function initNetsea() {
         if (initialized) return;
         initialized = true;
         checkStatus();
-        loadCategories();
+        loadSuppliers();
     }
 
     // ===== API接続ステータス確認 =====
@@ -50,33 +52,41 @@
             });
     }
 
-    // ===== カテゴリ一覧を取得 =====
-    function loadCategories() {
-        fetch('/api/netsea?action=categories')
+    // ===== サプライヤー一覧を取得→セレクトに表示 =====
+    function loadSuppliers() {
+        fetch('/api/netsea?action=suppliers')
             .then(function(res) { return res.json(); })
             .then(function(data) {
-                var categories = data.categories || [];
-                categories.forEach(function(cat) {
+                supplierList = data.suppliers || [];
+                var sel = document.getElementById('netseaCategoryFilter');
+                // カテゴリではなくサプライヤーを表示
+                sel.innerHTML = '<option value="">-- サプライヤーを選択 --</option>';
+                supplierList.forEach(function(s) {
                     var opt = document.createElement('option');
-                    opt.value = cat.name || cat.id;
-                    opt.textContent = cat.name;
-                    categorySelect.appendChild(opt);
+                    opt.value = s.id || s.supplier_id || '';
+                    opt.textContent = (s.name || s.supplier_name || '') + (s.category ? ' (' + s.category + ')' : '');
+                    sel.appendChild(opt);
                 });
+                // ラベル更新
+                var label = sel.previousElementSibling;
+                if (label && label.tagName === 'LABEL') {
+                    label.textContent = 'サプライヤー';
+                }
             })
             .catch(function(err) {
-                console.error('カテゴリ取得エラー:', err);
+                console.error('サプライヤー取得エラー:', err);
             });
     }
 
     // ===== 商品検索 =====
     function doSearch() {
+        var supplierId = categorySelect.value;
         var keyword = keywordInput.value.trim();
-        var category = categorySelect.value;
         var minPrice = minPriceInput.value;
         var maxPrice = maxPriceInput.value;
 
-        if (!keyword && !category) {
-            alert('キーワードまたはカテゴリを指定してください');
+        if (!supplierId && !keyword) {
+            alert('サプライヤーを選択するか、キーワードを入力してください');
             return;
         }
 
@@ -86,8 +96,8 @@
         searchBtn.textContent = '⏳ 検索中...';
 
         var params = 'action=items';
+        if (supplierId) params += '&supplier_id=' + encodeURIComponent(supplierId);
         if (keyword) params += '&keyword=' + encodeURIComponent(keyword);
-        if (category) params += '&category=' + encodeURIComponent(category);
         if (minPrice) params += '&minPrice=' + minPrice;
         if (maxPrice) params += '&maxPrice=' + maxPrice;
 
@@ -108,7 +118,7 @@
                     resultsEl.innerHTML = '<div class="netsea-mock-notice">📋 デモモード — NETSEAトークン設定後に実データが表示されます</div>';
                 }
 
-                renderItems(items);
+                renderItems(items, data.nextId);
             })
             .catch(function(err) {
                 loadingEl.style.display = 'none';
@@ -119,7 +129,7 @@
     }
 
     // ===== 商品カード描画 =====
-    function renderItems(items) {
+    function renderItems(items, nextId) {
         if (items.length === 0) {
             resultsEl.innerHTML += '<div class="research-loading"><p>商品が見つかりませんでした</p></div>';
             return;
@@ -141,6 +151,7 @@
                 : '-';
 
             card.innerHTML =
+                (item.image ? '<img class="result-img" src="' + esc(item.image) + '" alt="" onerror="this.style.display=\'none\'">' : '') +
                 '<div class="result-info">' +
                     '<div class="result-title">' + esc(item.name) + '</div>' +
                     '<div class="result-meta">' +
@@ -152,6 +163,7 @@
                         (item.supplier ? '<span>🏢 ' + esc(item.supplier) + '</span>' : '') +
                         (item.jan ? '<span>📦 JAN: ' + esc(item.jan) + '</span>' : '') +
                         (item.category ? '<span>📂 ' + esc(item.category) + '</span>' : '') +
+                        (item.min_lot > 1 ? '<span>📋 最小ロット: ' + item.min_lot + '</span>' : '') +
                     '</div>' +
                 '</div>' +
                 '<div class="result-actions">' +
@@ -170,14 +182,40 @@
 
             // 利益計算に追加ボタン
             card.querySelector('.btn-add-calc').addEventListener('click', function() {
-                var title = this.getAttribute('data-title');
                 if (window.sedoriApp && window.sedoriApp.addProductDirect) {
-                    window.sedoriApp.addProductDirect(title, '', '');
+                    window.sedoriApp.addProductDirect(this.getAttribute('data-title'), '', '');
                 }
             });
 
             resultsEl.appendChild(card);
         });
+
+        // もっと読み込むボタン
+        if (nextId) {
+            var moreBtn = document.createElement('button');
+            moreBtn.className = 'btn btn-outline';
+            moreBtn.style.cssText = 'width:100%;margin-top:12px;justify-content:center;';
+            moreBtn.textContent = '📦 もっと読み込む';
+            moreBtn.addEventListener('click', function() {
+                moreBtn.remove();
+                loadMore(nextId);
+            });
+            resultsEl.appendChild(moreBtn);
+        }
+    }
+
+    // ===== もっと読み込む =====
+    function loadMore(nextId) {
+        var supplierId = categorySelect.value;
+        var params = 'action=items&supplier_id=' + encodeURIComponent(supplierId) + '&next_id=' + nextId;
+        fetch('/api/netsea?' + params)
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                renderItems(data.items || [], data.nextId);
+            })
+            .catch(function(err) {
+                console.error('追加読み込みエラー:', err);
+            });
     }
 
     // ===== Amazon価格比較 =====
@@ -234,7 +272,6 @@
                         '</div>' +
                     '</div>';
 
-                // 利益計算に追加
                 var addBtn = body.querySelector('.netsea-add-profit');
                 if (addBtn) {
                     addBtn.addEventListener('click', function() {
