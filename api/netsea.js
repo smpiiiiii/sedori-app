@@ -325,7 +325,7 @@ module.exports = async (req, res) => {
                 });
             }
 
-            for (const sup of suppliers) {
+            for (const sup of suppliers.slice(0, 5)) {
                 const supId = sup.id || sup.supplier_id;
                 const supName = sup.name || sup.supplier_name || sup.shop_name || `ID:${supId}`;
                 if (!supId) continue;
