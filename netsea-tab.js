@@ -292,17 +292,6 @@
             });
     }
 
-    // おすすめカードをタップでAmazon比較
-    var recommendCards = document.querySelectorAll('.netsea-recommend-card[data-name]');
-    recommendCards.forEach(function(card) {
-        card.addEventListener('click', function() {
-            var name = this.getAttribute('data-name');
-            var amazonPrice = parseInt(this.getAttribute('data-amazon')) || 0;
-            // 仕入れ目安 = Amazon価格の50%（手数料込みで利益15%以上になる目安）
-            var estimatedCost = Math.round(amazonPrice * 0.5);
-            compareWithAmazon(name, '', estimatedCost);
-        });
-    });
 
     // ===== イベントバインド =====
     if (searchBtn) {
