@@ -48,12 +48,12 @@ function netseaFetch(endpoint, params = {}, method = 'POST') {
                     try {
                         const json = JSON.parse(str);
                         if (json.error) {
-                            reject(new Error(`NETSEA API: ${json.error.message || JSON.stringify(json.error)}`));
+                            reject(new Error(`NETSEA API [${res.statusCode}]: ${typeof json.error === 'string' ? json.error : (json.error.message || JSON.stringify(json.error))}`));
                         } else {
                             resolve(json);
                         }
                     } catch (e) {
-                        reject(new Error(`JSON解析エラー: ${e.message}\nBody: ${str.substring(0, 200)}`));
+                        reject(new Error(`JSON解析エラー [${res.statusCode}]: ${str.substring(0, 300)}`));
                     }
                 };
                 if (encoding === 'gzip') {
@@ -273,11 +273,14 @@ module.exports = async (req, res) => {
                 });
             }
 
-            // 全サプライヤーの商品を取得
+            // サプライヤーの商品を取得（デバッグ: 先頭10社）
             const allItems = [];
             const debugInfo = [];
+            const scanTarget = suppliers.slice(0, 10);
 
-            for (const sup of suppliers) {
+            const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+            for (const sup of scanTarget) {
                 const supId = sup.id || sup.supplier_id;
                 const supName = sup.name || sup.supplier_name || sup.shop_name || `ID:${supId}`;
                 if (!supId) {
@@ -285,7 +288,23 @@ module.exports = async (req, res) => {
                     continue;
                 }
                 try {
-                    const data = await netseaFetch('/items', { supplier_ids: [parseInt(supId)] }, 'POST');
+                    // POST → GET のフォールバック
+                    let data;
+                    try {
+                        data = await netseaFetch('/items', { supplier_ids: [parseInt(supId)] }, 'POST');
+                    } catch (postErr) {
+                        try {
+                            data = await netseaFetch('/items', { supplier_ids: supId }, 'GET');
+                        } catch (getErr) {
+                            debugInfo.push({
+                                supplier: supName, id: supId,
+                                postError: postErr.message,
+                                getError: getErr.message,
+                            });
+                            await delay(200);
+                            continue;
+                        }
+                    }
                     const rawItems = data.items || data.data || [];
                     const items = Array.isArray(rawItems) ? rawItems : [];
                     debugInfo.push({
@@ -330,8 +349,9 @@ module.exports = async (req, res) => {
             return res.status(200).json({
                 items: allItems.slice(0, 50),
                 total: allItems.length,
-                suppliersScanned: suppliers.length,
-                message: `${suppliers.length}社のサプライヤーから${allItems.length}商品を取得`,
+                suppliersScanned: scanTarget.length,
+                suppliersTotal: suppliers.length,
+                message: `${scanTarget.length}社(全${suppliers.length}社中)から${allItems.length}商品を取得`,
                 debug: debugInfo,
             });
         }
