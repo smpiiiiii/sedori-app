@@ -10,13 +10,21 @@ const KEEPA_API_KEY = process.env.KEEPA_API_KEY || 'ad07ahj2ltpq4om3fs0e2iol7g1c
 const NETSEA_API_BASE = 'https://api.netsea.jp/buyer/v1';
 const AMAZON_DOMAIN = 5; // Amazon.co.jp
 
-// ===== NETSEA APIリクエスト =====
-function netseaFetch(endpoint, params = {}) {
+// ===== NETSEA APIリクエスト（POST/GET両対応） =====
+function netseaFetch(endpoint, params = {}, method = 'POST') {
     return new Promise((resolve, reject) => {
-        const queryParams = new URLSearchParams(params);
-        const url = `${NETSEA_API_BASE}${endpoint}?${queryParams}`;
+        const urlObj = new URL(`${NETSEA_API_BASE}${endpoint}`);
+        const postData = method === 'POST' ? JSON.stringify(params) : '';
+
+        // GETの場合はクエリパラメータに追加
+        if (method === 'GET') {
+            Object.entries(params).forEach(([k, v]) => urlObj.searchParams.set(k, v));
+        }
 
         const options = {
+            hostname: urlObj.hostname,
+            path: urlObj.pathname + urlObj.search,
+            method: method,
             headers: {
                 'Authorization': `Bearer ${NETSEA_TOKEN}`,
                 'Accept': 'application/json',
@@ -24,7 +32,13 @@ function netseaFetch(endpoint, params = {}) {
             },
         };
 
-        https.get(url, options, (res) => {
+        // POSTの場合はContent-Typeを設定
+        if (method === 'POST') {
+            options.headers['Content-Type'] = 'application/json';
+            options.headers['Content-Length'] = Buffer.byteLength(postData);
+        }
+
+        const req = https.request(options, (res) => {
             const chunks = [];
             res.on('data', chunk => chunks.push(chunk));
             res.on('end', () => {
@@ -39,7 +53,7 @@ function netseaFetch(endpoint, params = {}) {
                             resolve(json);
                         }
                     } catch (e) {
-                        reject(new Error(`JSON解析エラー: ${e.message}`));
+                        reject(new Error(`JSON解析エラー: ${e.message}\nBody: ${str.substring(0, 200)}`));
                     }
                 };
                 if (encoding === 'gzip') {
@@ -50,7 +64,15 @@ function netseaFetch(endpoint, params = {}) {
                     parse(buffer.toString());
                 }
             });
-        }).on('error', reject);
+        });
+
+        req.on('error', reject);
+
+        // POSTの場合はボディを送信
+        if (method === 'POST') {
+            req.write(postData);
+        }
+        req.end();
     });
 }
 
@@ -161,7 +183,13 @@ module.exports = async (req, res) => {
             if (useMock) {
                 return res.status(200).json({ categories: getMockCategories(), isMock: true });
             }
-            const data = await netseaFetch('/categories');
+            // GETで試行、失敗時POSTにフォールバック
+            let data;
+            try {
+                data = await netseaFetch('/categories', {}, 'GET');
+            } catch (e) {
+                data = await netseaFetch('/categories', {}, 'POST');
+            }
             return res.status(200).json({ categories: data.categories || data, isMock: false });
         }
 
@@ -292,7 +320,7 @@ module.exports = async (req, res) => {
                     isMock: true,
                 });
             }
-            const data = await netseaFetch('/suppliers');
+            const data = await netseaFetch('/suppliers', {}, 'GET').catch(() => netseaFetch('/suppliers', {}, 'POST'));
             return res.status(200).json({ suppliers: data.suppliers || data, isMock: false });
         }
 
