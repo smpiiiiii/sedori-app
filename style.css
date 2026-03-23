@@ -916,7 +916,13 @@ body {
 .recommend-info { flex: 1; min-width: 0; }
 .recommend-category { font-size: 10px; color: var(--text2); margin-bottom: 2px; }
 .recommend-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.recommend-price { font-size: 12px; color: #f39c12; font-weight: 700; margin-top: 2px; }
+.recommend-prices { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+.recommend-amazon { font-size: 11px; color: #f39c12; font-weight: 700; }
+.recommend-target { font-size: 11px; color: #00b894; font-weight: 600; }
+.recommend-verdict { font-size: 10px; margin-top: 3px; font-weight: 700; }
+.verdict-hot { color: #fd7272; }
+.verdict-ok { color: #74b9ff; }
+.netsea-recommend-card { cursor: pointer; }
 .netsea-recommend-tips {
     margin-top: 14px;
     padding: 12px 14px;
