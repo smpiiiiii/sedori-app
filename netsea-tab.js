@@ -312,91 +312,18 @@
                 scanBtn.disabled = false;
                 scanBtn.textContent = '🔍 承認済み商品をスキャン';
 
-                if (!data.items || data.items.length === 0) {
-                    var debugHtml = '';
-                    if (data.debug) {
-                        debugHtml = '<details style="margin-top:8px;font-size:11px;text-align:left;"><summary>🔧 デバッグ情報</summary><pre style="white-space:pre-wrap;word-break:break-all;max-height:200px;overflow:auto;background:rgba(0,0,0,.3);padding:8px;border-radius:6px;">' + esc(JSON.stringify(data.debug, null, 2)) + '</pre></details>';
-                    }
-                    scanResults.innerHTML =
-                        '<div class="netsea-scan-empty">' +
-                            '<p>📭 ' + esc(data.message || '商品が見つかりませんでした') + '</p>' +
-                            '<p class="hint">サプライヤーの取引承認が降りると、ここに利益商品が表示されます</p>' +
-                            debugHtml +
-                        '</div>';
-                    return;
-                }
+                // localStorageに保存
+                try {
+                    localStorage.setItem('netsea_scan_data', JSON.stringify({
+                        items: data.items,
+                        message: data.message,
+                        janCount: data.janCount,
+                        total: data.total,
+                        savedAt: new Date().toISOString(),
+                    }));
+                } catch(e) {}
 
-
-                // JANフィルター付きメッセージ表示
-                var filterHtml = '';
-                if (data.janCount > 0) {
-                    filterHtml = '<div style="margin:8px 0;display:flex;gap:6px;flex-wrap:wrap;">' +
-                        '<button id="janFilterAll" onclick="window._janFilter(false)" class="scan-filter-btn active" style="padding:4px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;font-size:12px;cursor:pointer;">📦 全商品 (' + data.items.length + ')</button>' +
-                        '<button id="janFilterJan" onclick="window._janFilter(true)" class="scan-filter-btn" style="padding:4px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:transparent;color:rgba(255,255,255,.7);font-size:12px;cursor:pointer;">🏷️ JAN付きのみ (' + data.janCount + ')</button>' +
-                    '</div>';
-                }
-                scanResults.innerHTML = '<div class="netsea-result-count">🏭 ' + data.message + '</div>' + filterHtml;
-
-                // フィルター機能
-                window._scanItems = data.items;
-                window._janFilter = function(janOnly) {
-                    var allBtn = document.getElementById('janFilterAll');
-                    var janBtn = document.getElementById('janFilterJan');
-                    if (allBtn && janBtn) {
-                        allBtn.style.background = janOnly ? 'transparent' : 'rgba(255,255,255,.15)';
-                        allBtn.style.color = janOnly ? 'rgba(255,255,255,.7)' : '#fff';
-                        janBtn.style.background = janOnly ? 'rgba(255,255,255,.15)' : 'transparent';
-                        janBtn.style.color = janOnly ? '#fff' : 'rgba(255,255,255,.7)';
-                    }
-                    // カードの表示/非表示
-                    var cards = scanResults.querySelectorAll('.netsea-scan-card');
-                    cards.forEach(function(card, i) {
-                        var item = window._scanItems[i];
-                        if (!item) return;
-                        var hasJan = item.jan && item.jan.length >= 8;
-                        card.style.display = (janOnly && !hasJan) ? 'none' : '';
-                    });
-                };
-
-                data.items.forEach(function(item, idx) {
-                    var card = document.createElement('div');
-                    card.className = 'result-card netsea-scan-card';
-
-                    var marginClass = item.margin >= 40 ? 'margin-high' : (item.margin >= 20 ? 'margin-mid' : 'margin-low');
-
-                    card.innerHTML =
-                        (item.image ? '<img class="result-img" src="' + esc(item.image) + '" alt="" onerror="this.style.display=\'none\'">' : '') +
-                        '<div class="result-info">' +
-                            '<div class="result-title">' + esc(item.name) + '</div>' +
-                            '<div class="result-meta">' +
-                                '<span class="result-tag netsea-wholesale">🏭 卸値 ¥' + item.wholesale_price.toLocaleString() + '</span>' +
-                                '<span class="result-tag netsea-retail">🏪 参考 ¥' + (item.retail_price || 0).toLocaleString() + '</span>' +
-                                '<span class="result-tag ' + marginClass + '">📊 粗利 ' + item.margin + '%</span>' +
-                            '</div>' +
-                            '<div class="netsea-item-detail">' +
-                                '<span>🏢 ' + esc(item.supplier) + '</span>' +
-                                (item.jan ? '<span>📦 JAN: ' + esc(item.jan) + '</span>' : '') +
-                            '</div>' +
-                            '<div class="recommend-links" style="margin-top:6px;">' +
-                                '<a href="' + esc(item.netsea_url) + '" target="_blank" class="link-netsea">🏭 NETSEAで購入</a>' +
-                                '<a href="https://www.amazon.co.jp/s?k=' + encodeURIComponent(item.name) + '" target="_blank" class="link-amazon">🔗 Amazon相場</a>' +
-                            '</div>' +
-                        '</div>' +
-                        '<div class="result-actions">' +
-                            '<button class="btn-compare-amazon" data-name="' + esc(item.name).replace(/"/g, '&quot;') + '" data-jan="' + esc(item.jan || '') + '" data-price="' + item.wholesale_price + '">🔍 利益計算</button>' +
-                        '</div>';
-
-                    // Amazon比較ボタン
-                    card.querySelector('.btn-compare-amazon').addEventListener('click', function() {
-                        compareWithAmazon(
-                            this.getAttribute('data-name'),
-                            this.getAttribute('data-jan'),
-                            parseInt(this.getAttribute('data-price'))
-                        );
-                    });
-
-                    scanResults.appendChild(card);
-                });
+                renderScanResults(data, scanResults);
             })
             .catch(function(err) {
                 scanLoading.style.display = 'none';
@@ -404,6 +331,94 @@
                 scanBtn.textContent = '🔍 承認済み商品をスキャン';
                 scanResults.innerHTML = '<div class="netsea-scan-empty"><p>❌ エラー: ' + esc(err.message) + '</p></div>';
             });
+    }
+
+    // ===== スキャン結果レンダリング（localStorage復元にも使用） =====
+    function renderScanResults(data, scanResults) {
+        if (!data.items || data.items.length === 0) {
+            scanResults.innerHTML =
+                '<div class="netsea-scan-empty">' +
+                    '<p>📭 ' + esc(data.message || '商品が見つかりませんでした') + '</p>' +
+                    '<p class="hint">サプライヤーの取引承認が降りると、ここに利益商品が表示されます</p>' +
+                '</div>';
+            return;
+        }
+
+        // 保存日時
+        var savedInfo = '';
+        if (data.savedAt) {
+            var d = new Date(data.savedAt);
+            savedInfo = '<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:4px;">📅 ' + d.toLocaleDateString('ja-JP') + ' ' + d.toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit'}) + ' のスキャン結果</div>';
+        }
+
+        // JANフィルター付きメッセージ表示
+        var filterHtml = '';
+        if (data.janCount > 0) {
+            filterHtml = '<div style="margin:8px 0;display:flex;gap:6px;flex-wrap:wrap;">' +
+                '<button id="janFilterAll" onclick="window._janFilter(false)" style="padding:4px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;font-size:12px;cursor:pointer;">📦 全商品 (' + data.items.length + ')</button>' +
+                '<button id="janFilterJan" onclick="window._janFilter(true)" style="padding:4px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.3);background:transparent;color:rgba(255,255,255,.7);font-size:12px;cursor:pointer;">🏷️ JAN付きのみ (' + data.janCount + ')</button>' +
+            '</div>';
+        }
+        scanResults.innerHTML = '<div class="netsea-result-count">🏭 ' + data.message + '</div>' + savedInfo + filterHtml;
+
+        // フィルター機能
+        window._scanItems = data.items;
+        window._janFilter = function(janOnly) {
+            var allBtn = document.getElementById('janFilterAll');
+            var janBtn = document.getElementById('janFilterJan');
+            if (allBtn && janBtn) {
+                allBtn.style.background = janOnly ? 'transparent' : 'rgba(255,255,255,.15)';
+                allBtn.style.color = janOnly ? 'rgba(255,255,255,.7)' : '#fff';
+                janBtn.style.background = janOnly ? 'rgba(255,255,255,.15)' : 'transparent';
+                janBtn.style.color = janOnly ? '#fff' : 'rgba(255,255,255,.7)';
+            }
+            var cards = scanResults.querySelectorAll('.netsea-scan-card');
+            cards.forEach(function(card, i) {
+                var item = window._scanItems[i];
+                if (!item) return;
+                var hasJan = item.jan && item.jan.length >= 8;
+                card.style.display = (janOnly && !hasJan) ? 'none' : '';
+            });
+        };
+
+        data.items.forEach(function(item, idx) {
+            var card = document.createElement('div');
+            card.className = 'result-card netsea-scan-card';
+
+            var marginClass = item.margin >= 40 ? 'margin-high' : (item.margin >= 20 ? 'margin-mid' : 'margin-low');
+
+            card.innerHTML =
+                (item.image ? '<img class="result-img" src="' + esc(item.image) + '" alt="" onerror="this.style.display=\'none\'">' : '') +
+                '<div class="result-info">' +
+                    '<div class="result-title">' + esc(item.name) + '</div>' +
+                    '<div class="result-meta">' +
+                        '<span class="result-tag netsea-wholesale">🏭 卸値 ¥' + item.wholesale_price.toLocaleString() + '</span>' +
+                        '<span class="result-tag netsea-retail">🏪 参考 ¥' + (item.retail_price || 0).toLocaleString() + '</span>' +
+                        '<span class="result-tag ' + marginClass + '">📊 粗利 ' + item.margin + '%</span>' +
+                    '</div>' +
+                    '<div class="netsea-item-detail">' +
+                        '<span>🏢 ' + esc(item.supplier) + '</span>' +
+                        (item.jan ? '<span>📦 JAN: ' + esc(item.jan) + '</span>' : '') +
+                    '</div>' +
+                    '<div class="recommend-links" style="margin-top:6px;">' +
+                        '<a href="' + esc(item.netsea_url) + '" target="_blank" class="link-netsea">🏭 NETSEAで購入</a>' +
+                        '<a href="https://www.amazon.co.jp/s?k=' + encodeURIComponent(item.name) + '" target="_blank" class="link-amazon">🔗 Amazon相場</a>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="result-actions">' +
+                    '<button class="btn-compare-amazon" data-name="' + esc(item.name).replace(/"/g, '&quot;') + '" data-jan="' + esc(item.jan || '') + '" data-price="' + item.wholesale_price + '">🔍 利益計算</button>' +
+                '</div>';
+
+            card.querySelector('.btn-compare-amazon').addEventListener('click', function() {
+                compareWithAmazon(
+                    this.getAttribute('data-name'),
+                    this.getAttribute('data-jan'),
+                    parseInt(this.getAttribute('data-price'))
+                );
+            });
+
+            scanResults.appendChild(card);
+        });
     }
 
     // ===== イベントバインド =====
@@ -419,6 +434,18 @@
     if (scanBtn) {
         scanBtn.addEventListener('click', doScan);
     }
+
+    // ===== localStorage から前回スキャン結果を復元 =====
+    try {
+        var saved = localStorage.getItem('netsea_scan_data');
+        if (saved) {
+            var savedData = JSON.parse(saved);
+            var scanResults = document.getElementById('netseaScanResults');
+            if (savedData.items && savedData.items.length > 0 && scanResults) {
+                renderScanResults(savedData, scanResults);
+            }
+        }
+    } catch(e) {}
 
     // モーダル閉じる
     var compareModal = document.getElementById('netseaCompareModal');

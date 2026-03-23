@@ -33,8 +33,6 @@
 <!-- タブナビ -->
 <div class="tab-nav">
     <button class="tab-btn active" data-tab="calc" id="tabCalc">📊 利益計算</button>
-    <button class="tab-btn" data-tab="research" id="tabResearch">🔍 リサーチ</button>
-    <button class="tab-btn" data-tab="scan" id="tabScan">🚀 スキャン</button>
     <button class="tab-btn" data-tab="netsea" id="tabNetsea">🏭 NETSEA</button>
 </div>
 
@@ -104,106 +102,10 @@
     </div>
 </div>
 
-<!-- ===== リサーチタブ ===== -->
-<div class="content tab-content" id="researchSection" style="display:none">
-    <!-- リサーチ検索バー -->
-    <div class="research-search-card">
-        <div class="research-search-bar">
-            <input type="text" id="keepaSearchInput" placeholder="商品名で検索（例: フェイスパック）" class="research-input">
-            <button class="btn btn-primary" id="keepaSearchBtn">🔍 検索</button>
-        </div>
-        <div class="research-info">
-            <span id="tokenInfo">💰 トークン: --</span>
-            <span class="research-hint">※ 1分に1回検索可能（Keepa API制限）</span>
-        </div>
-    </div>
 
-    <!-- 検索中 -->
-    <div id="searchLoading" class="research-loading" style="display:none">
-        <div class="spinner"></div>
-        <p>Amazon商品を検索中...</p>
-    </div>
 
-    <!-- 検索結果 -->
-    <div id="searchResults" class="research-results"></div>
-</div>
 
-<!-- ===== スキャンタブ（自動リサーチ） ===== -->
-<div class="content tab-content" id="scanSection" style="display:none">
-    <!-- スキャン設定カード -->
-    <div class="scan-config-card">
-        <h3>⚙️ スキャン設定</h3>
-        <div class="scan-config-row">
-            <div class="scan-config-item">
-                <label>最低価格</label>
-                <input type="number" id="scanMinPrice" value="1000" inputmode="numeric">
-            </div>
-            <div class="scan-config-item">
-                <label>最高価格</label>
-                <input type="number" id="scanMaxPrice" value="10000" inputmode="numeric">
-            </div>
-            <div class="scan-config-item">
-                <label>最大ランキング</label>
-                <input type="number" id="scanMaxRank" value="50000" inputmode="numeric">
-            </div>
-            <div class="scan-config-item">
-                <label>仕入値（想定）</label>
-                <input type="number" id="scanCostRate" value="60" inputmode="numeric">
-                <span class="config-hint">%（販売価格の）</span>
-            </div>
-        </div>
-        <div class="scan-filters">
-            <div class="scan-config-item">
-                <label>最低利益額</label>
-                <input type="number" id="scanMinProfit" value="500" inputmode="numeric">
-                <span class="config-hint">円〜</span>
-            </div>
-            <div class="scan-config-item">
-                <label>最低利益率</label>
-                <input type="number" id="scanMinProfitRate" value="10" inputmode="numeric">
-                <span class="config-hint">%〜</span>
-            </div>
-        </div>
-        <button class="btn btn-scan" id="scanStartBtn">🚀 スキャン開始</button>
-    </div>
 
-    <!-- ステータスダッシュボード -->
-    <div class="scan-dashboard">
-        <div class="scan-stat">
-            <div class="scan-stat-num" id="scanTotal">0</div>
-            <div class="scan-stat-label">検索対象</div>
-        </div>
-        <div class="scan-stat">
-            <div class="scan-stat-num" id="scanSearched">0</div>
-            <div class="scan-stat-label">検索済み</div>
-        </div>
-        <div class="scan-stat hit">
-            <div class="scan-stat-num" id="scanHits">0</div>
-            <div class="scan-stat-label">利益ヒット</div>
-        </div>
-        <div class="scan-stat high">
-            <div class="scan-stat-num" id="scanHighProfit">0</div>
-            <div class="scan-stat-label">高利益</div>
-        </div>
-    </div>
-
-    <!-- プログレスバー -->
-    <div class="scan-progress-bar">
-        <div class="scan-progress-fill" id="scanProgressFill" style="width:0%"></div>
-    </div>
-    <div class="scan-status" id="scanStatus">スキャン待機中</div>
-
-    <!-- ソートバー -->
-    <div class="scan-sort-bar">
-        <button class="scan-sort-btn active" data-sort="newest">新着順</button>
-        <button class="scan-sort-btn" data-sort="profit">利益額順</button>
-        <button class="scan-sort-btn" data-sort="rate">利益率順</button>
-        <span class="scan-result-count" id="scanResultCount">0件</span>
-    </div>
-
-    <!-- スキャン結果リスト -->
-    <div id="scanResults" class="research-results"></div>
-</div>
 
 <!-- ===== NETSEAタブ ===== -->
 <div class="content tab-content" id="netseaSection" style="display:none">
