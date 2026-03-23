@@ -275,9 +275,7 @@ module.exports = async (req, res) => {
 
             // 全サプライヤーの商品を取得
             const allItems = [];
-            const debugInfo = { approved: [], denied: 0, rawSamples: [] };
-
-            const delay = (ms) => new Promise(r => setTimeout(r, ms));
+            const debugInfo = { approved: [] };
 
             // x-www-form-urlencoded形式でNETSEA APIにリクエスト
             function netseaRawFetch(endpoint, params) {
@@ -325,40 +323,27 @@ module.exports = async (req, res) => {
                 });
             }
 
-            for (const sup of suppliers.slice(0, 5)) {
-                const supId = sup.id || sup.supplier_id;
-                const supName = sup.name || sup.supplier_name || sup.shop_name || `ID:${supId}`;
-                if (!supId) continue;
-
-                try {
-                    const result = await netseaRawFetch('/items', { supplier_ids: [parseInt(supId)] });
-
-                    // errorがあっても、itemsもある場合はデータを取得
-                    const body = result.body || {};
-                    const rawItems = body.items || body.data || body.direct_items || [];
-                    const items = Array.isArray(rawItems) ? rawItems : [];
-
-                    // デバッグ: 最初の3社の生レスポンスと商品サンプルを保存
-                    if (debugInfo.rawSamples.length < 3) {
-                        const sampleItem = items.length > 0 ? items[0] : null;
-                        debugInfo.rawSamples.push({
-                            supplierId: supId,
-                            status: result.status,
-                            bodyKeys: result.body ? Object.keys(result.body) : [],
-                            itemCount: items.length,
-                            itemKeys: sampleItem ? Object.keys(sampleItem) : [],
-                            sampleItem: sampleItem ? JSON.stringify(sampleItem).substring(0, 500) : 'none',
-                        });
+            // 10社ずつ並列バッチでスキャン（タイムアウト対策）
+            const BATCH_SIZE = 10;
+            for (let i = 0; i < suppliers.length; i += BATCH_SIZE) {
+                const batch = suppliers.slice(i, i + BATCH_SIZE);
+                const results = await Promise.all(batch.map(async (sup) => {
+                    const supId = sup.id || sup.supplier_id;
+                    if (!supId) return null;
+                    try {
+                        const result = await netseaRawFetch('/items', { supplier_ids: [parseInt(supId)] });
+                        const body = result.body || {};
+                        const rawItems = body.items || body.data || body.direct_items || [];
+                        return { supId, items: Array.isArray(rawItems) ? rawItems : [] };
+                    } catch (e) {
+                        return null;
                     }
+                }));
 
-                    if (items.length > 0) {
-                        debugInfo.approved.push({ name: supName, id: supId, count: items.length });
-                    } else {
-                        debugInfo.denied++;
-                    }
-
-                    items.forEach(item => {
-                        // setフィールドから価格を抽出
+                results.forEach(r => {
+                    if (!r || r.items.length === 0) return;
+                    const supId = r.supId;
+                    r.items.forEach(item => {
                         const sets = item.set || [];
                         let wholesale = 0;
                         let retail = 0;
@@ -366,23 +351,17 @@ module.exports = async (req, res) => {
                         if (Array.isArray(sets) && sets.length > 0) {
                             const s = sets[0];
                             wholesale = s.price || s.wholesale_price || s.net_price || 0;
-                            retail = s.retail_price || s.reference_price || s.msrp || 0;
-                            minLot = s.min_quantity || s.lot || s.min_lot || 1;
+                            retail = parseInt(s.reference_price) || s.retail_price || 0;
+                            minLot = s.min_quantity || s.lot || 1;
                         }
-
-                        // デバッグ: 最初の商品のsetフィールドを保存
-                        if (allItems.length === 0 && sets.length > 0 && !debugInfo.sampleSet) {
-                            debugInfo.sampleSet = JSON.stringify(sets[0]).substring(0, 400);
-                        }
-
                         const margin = retail > 0 ? Math.round((1 - wholesale / retail) * 100) : 0;
                         allItems.push({
-                            id: item.product_id || item.direct_item_id || '',
+                            id: item.product_id || '',
                             name: item.product_name || '',
                             wholesale_price: wholesale,
                             retail_price: retail,
                             margin: margin,
-                            supplier: item.shop_name || supName,
+                            supplier: item.shop_name || `ID:${supId}`,
                             supplier_id: supId,
                             image: item.image_url_1 || null,
                             jan: item.jan_code || '',
@@ -391,11 +370,8 @@ module.exports = async (req, res) => {
                             netsea_url: item.product_url || `https://www.netsea.jp/shop/${supId}/${item.product_id}`,
                         });
                     });
-                } catch (e) {
-                    debugInfo.denied++;
-                }
-                // レート制限回避
-                await delay(100);
+                    debugInfo.approved.push({ name: r.items[0]?.shop_name || `ID:${supId}`, id: supId, count: r.items.length });
+                });
             }
 
             // 粗利率の高い順にソート（卸値あるものを優先）
@@ -410,7 +386,7 @@ module.exports = async (req, res) => {
                 total: allItems.length,
                 suppliersScanned: suppliers.length,
                 suppliersApproved: debugInfo.approved.length,
-                message: `${suppliers.length}社中 承認${debugInfo.approved.length}社から${allItems.length}商品を取得（${debugInfo.denied}社は未承認）`,
+                message: `${debugInfo.approved.length}社のサプライヤーから${allItems.length}商品を取得`,
                 debug: debugInfo,
             });
         }
