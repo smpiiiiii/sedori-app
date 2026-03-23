@@ -241,6 +241,76 @@ module.exports = async (req, res) => {
             });
         }
 
+        // ===== 承認済みサプライヤー商品スキャン =====
+        if (action === 'scan') {
+            if (useMock) {
+                return res.status(200).json({ items: [], total: 0, message: 'デモモード - NETSEAトークン設定後に利用可能' });
+            }
+
+            // サプライヤー一覧を取得
+            let suppliers = [];
+            try {
+                let sData;
+                try { sData = await netseaFetch('/suppliers', {}, 'GET'); }
+                catch (e) { sData = await netseaFetch('/suppliers', {}, 'POST'); }
+                const raw = sData.suppliers || sData.data || sData;
+                suppliers = Array.isArray(raw) ? raw : (raw && raw.data ? raw.data : []);
+            } catch (e) {
+                return res.status(200).json({ items: [], total: 0, message: 'サプライヤー取得エラー: ' + e.message });
+            }
+
+            if (suppliers.length === 0) {
+                return res.status(200).json({ items: [], total: 0, message: '承認済みサプライヤーがまだありません。取引申請の承認をお待ちください。' });
+            }
+
+            // 各サプライヤーの商品を取得（最大5社、各20商品）
+            const maxSuppliers = 5;
+            const allItems = [];
+            const scanned = suppliers.slice(0, maxSuppliers);
+
+            for (const sup of scanned) {
+                const supId = sup.id || sup.supplier_id;
+                if (!supId) continue;
+                try {
+                    const data = await netseaFetch('/items', { supplier_ids: [parseInt(supId)] }, 'POST');
+                    const items = (data.items || []).slice(0, 20);
+                    items.forEach(item => {
+                        const wholesale = item.price || 0;
+                        const retail = item.msrp || item.retail_price || 0;
+                        const margin = retail > 0 ? Math.round((1 - wholesale / retail) * 100) : 0;
+                        if (wholesale > 0) {
+                            allItems.push({
+                                id: item.direct_item_id || item.id,
+                                name: item.item_name || item.name || '',
+                                wholesale_price: wholesale,
+                                retail_price: retail,
+                                margin: margin,
+                                supplier: sup.name || sup.supplier_name || '',
+                                supplier_id: supId,
+                                image: item.image_url || item.main_image_url || null,
+                                jan: item.jan_code || item.branch_code || '',
+                                category: item.category_name || '',
+                                min_lot: item.min_lot || 1,
+                                netsea_url: `https://www.netsea.jp/shop/${supId}/detail/${item.direct_item_id || item.id}`,
+                            });
+                        }
+                    });
+                } catch (e) {
+                    console.log(`サプライヤー${supId}の商品取得エラー:`, e.message);
+                }
+            }
+
+            // 粗利率の高い順にソート
+            allItems.sort((a, b) => b.margin - a.margin);
+
+            return res.status(200).json({
+                items: allItems.slice(0, 30),
+                total: allItems.length,
+                suppliersScanned: scanned.length,
+                message: `${scanned.length}社のサプライヤーから${allItems.length}商品を取得`,
+            });
+        }
+
         // ===== Amazon価格比較 =====
         if (action === 'compare') {
             const jan = url.searchParams.get('jan') || '';

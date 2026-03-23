@@ -216,8 +216,16 @@
     <!-- おすすめ商品 -->
     <div class="netsea-recommend-section" id="netseaRecommend">
         <div class="netsea-recommend-header">
-            <h3>🔥 おすすめ売れ筋商品</h3>
-            <span class="netsea-recommend-subtitle">仕入れ先リンクから安く買える場所をチェック！</span>
+            <h3>🔥 NETSEA利益商品スキャン</h3>
+            <span class="netsea-recommend-subtitle">承認済みサプライヤーの商品からAmazon転売で利益が出る商品を検索</span>
+        </div>
+        <button class="btn btn-success" id="netseaScanBtn" style="width:100%;justify-content:center;margin-bottom:12px;">🔍 承認済み商品をスキャン</button>
+        <div id="netseaScanLoading" class="research-loading" style="display:none;"><div class="spinner"></div><p>サプライヤー商品をスキャン中...</p></div>
+        <div id="netseaScanResults"></div>
+
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06);">
+            <h3 style="font-size:15px;margin-bottom:8px;">📋 参考: 市場で売れ筋の商品</h3>
+            <span class="netsea-recommend-subtitle">各サイトで価格比較してみてください</span>
         </div>
         <div class="netsea-recommend-list" id="recommendList">
 

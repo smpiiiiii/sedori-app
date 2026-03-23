@@ -292,6 +292,83 @@
             });
     }
 
+    // ===== NETSEAスキャン（承認済みサプライヤー商品を取得） =====
+    function doScan() {
+        var scanBtn = document.getElementById('netseaScanBtn');
+        var scanLoading = document.getElementById('netseaScanLoading');
+        var scanResults = document.getElementById('netseaScanResults');
+        if (!scanBtn) return;
+
+        scanBtn.disabled = true;
+        scanBtn.textContent = '⏳ スキャン中...';
+        scanLoading.style.display = '';
+        scanResults.innerHTML = '';
+
+        fetch('/api/netsea?action=scan')
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                scanLoading.style.display = 'none';
+                scanBtn.disabled = false;
+                scanBtn.textContent = '🔍 承認済み商品をスキャン';
+
+                if (!data.items || data.items.length === 0) {
+                    scanResults.innerHTML =
+                        '<div class="netsea-scan-empty">' +
+                            '<p>📭 ' + esc(data.message || '商品が見つかりませんでした') + '</p>' +
+                            '<p class="hint">サプライヤーの取引承認が降りると、ここに利益商品が表示されます</p>' +
+                        '</div>';
+                    return;
+                }
+
+                scanResults.innerHTML = '<div class="netsea-result-count">🏭 ' + data.message + '</div>';
+
+                data.items.forEach(function(item, idx) {
+                    var card = document.createElement('div');
+                    card.className = 'result-card netsea-scan-card';
+
+                    var marginClass = item.margin >= 40 ? 'margin-high' : (item.margin >= 20 ? 'margin-mid' : 'margin-low');
+
+                    card.innerHTML =
+                        (item.image ? '<img class="result-img" src="' + esc(item.image) + '" alt="" onerror="this.style.display=\'none\'">' : '') +
+                        '<div class="result-info">' +
+                            '<div class="result-title">' + esc(item.name) + '</div>' +
+                            '<div class="result-meta">' +
+                                '<span class="result-tag netsea-wholesale">🏭 卸値 ¥' + item.wholesale_price.toLocaleString() + '</span>' +
+                                '<span class="result-tag netsea-retail">🏪 参考 ¥' + (item.retail_price || 0).toLocaleString() + '</span>' +
+                                '<span class="result-tag ' + marginClass + '">📊 粗利 ' + item.margin + '%</span>' +
+                            '</div>' +
+                            '<div class="netsea-item-detail">' +
+                                '<span>🏢 ' + esc(item.supplier) + '</span>' +
+                                (item.jan ? '<span>📦 JAN: ' + esc(item.jan) + '</span>' : '') +
+                            '</div>' +
+                            '<div class="recommend-links" style="margin-top:6px;">' +
+                                '<a href="' + esc(item.netsea_url) + '" target="_blank" class="link-netsea">🏭 NETSEAで購入</a>' +
+                                '<a href="https://www.amazon.co.jp/s?k=' + encodeURIComponent(item.name) + '" target="_blank" class="link-amazon">🔗 Amazon相場</a>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="result-actions">' +
+                            '<button class="btn-compare-amazon" data-name="' + esc(item.name).replace(/"/g, '&quot;') + '" data-jan="' + esc(item.jan || '') + '" data-price="' + item.wholesale_price + '">🔍 利益計算</button>' +
+                        '</div>';
+
+                    // Amazon比較ボタン
+                    card.querySelector('.btn-compare-amazon').addEventListener('click', function() {
+                        compareWithAmazon(
+                            this.getAttribute('data-name'),
+                            this.getAttribute('data-jan'),
+                            parseInt(this.getAttribute('data-price'))
+                        );
+                    });
+
+                    scanResults.appendChild(card);
+                });
+            })
+            .catch(function(err) {
+                scanLoading.style.display = 'none';
+                scanBtn.disabled = false;
+                scanBtn.textContent = '🔍 承認済み商品をスキャン';
+                scanResults.innerHTML = '<div class="netsea-scan-empty"><p>❌ エラー: ' + esc(err.message) + '</p></div>';
+            });
+    }
 
     // ===== イベントバインド =====
     if (searchBtn) {
@@ -301,6 +378,10 @@
         keywordInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') doSearch();
         });
+    }
+    var scanBtn = document.getElementById('netseaScanBtn');
+    if (scanBtn) {
+        scanBtn.addEventListener('click', doScan);
     }
 
     // モーダル閉じる
