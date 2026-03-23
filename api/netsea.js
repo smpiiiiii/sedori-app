@@ -327,7 +327,16 @@ module.exports = async (req, res) => {
                 });
             }
             const data = await netseaFetch('/suppliers', {}, 'GET').catch(() => netseaFetch('/suppliers', {}, 'POST'));
-            return res.status(200).json({ suppliers: data.suppliers || data, isMock: false });
+            // APIレスポンスの構造を正規化（{data:[...]}, 配列, {suppliers:[...]} 等に対応）
+            let list = [];
+            if (Array.isArray(data)) {
+                list = data;
+            } else if (data.data && Array.isArray(data.data)) {
+                list = data.data;
+            } else if (data.suppliers) {
+                list = Array.isArray(data.suppliers) ? data.suppliers : (data.suppliers.data || []);
+            }
+            return res.status(200).json({ suppliers: list, isMock: false });
         }
 
         // ===== ステータス確認 =====

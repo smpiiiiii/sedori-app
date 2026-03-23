@@ -57,7 +57,7 @@
         fetch('/api/netsea?action=suppliers')
             .then(function(res) { return res.json(); })
             .then(function(data) {
-                supplierList = data.suppliers || [];
+                supplierList = Array.isArray(data.suppliers) ? data.suppliers : (data.suppliers && data.suppliers.data ? data.suppliers.data : []);
                 var sel = document.getElementById('netseaCategoryFilter');
                 // カテゴリではなくサプライヤーを表示
                 sel.innerHTML = '<option value="">-- サプライヤーを選択 --</option>';
