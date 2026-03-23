@@ -279,11 +279,16 @@ module.exports = async (req, res) => {
 
             const delay = (ms) => new Promise(r => setTimeout(r, ms));
 
-            // errorフィールドを無視してレスポンス全体を返すfetch
+            // x-www-form-urlencoded形式でNETSEA APIにリクエスト
             function netseaRawFetch(endpoint, params) {
                 return new Promise((resolve, reject) => {
                     const urlObj = new URL(`${NETSEA_API_BASE}${endpoint}`);
-                    const postData = JSON.stringify(params);
+                    // URLSearchParams形式でボディを作成
+                    const formParams = new URLSearchParams();
+                    Object.entries(params).forEach(([k, v]) => {
+                        formParams.append(k, Array.isArray(v) ? v.join(',') : v);
+                    });
+                    const postData = formParams.toString();
                     const options = {
                         hostname: urlObj.hostname,
                         path: urlObj.pathname + urlObj.search,
@@ -291,7 +296,7 @@ module.exports = async (req, res) => {
                         headers: {
                             'Authorization': `Bearer ${NETSEA_TOKEN}`,
                             'Accept': 'application/json',
-                            'Content-Type': 'application/json',
+                            'Content-Type': 'application/x-www-form-urlencoded',
                             'Content-Length': Buffer.byteLength(postData),
                         },
                     };
