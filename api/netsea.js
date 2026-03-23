@@ -273,60 +273,25 @@ module.exports = async (req, res) => {
                 });
             }
 
-            // サプライヤーの商品を取得（デバッグ: 先頭10社）
+            // 全サプライヤーの商品を取得（成功=承認済み、エラー=未承認）
             const allItems = [];
-            const debugInfo = [];
-            const scanTarget = suppliers.slice(0, 3);
+            const debugInfo = { approved: [], denied: 0, errors: [] };
 
             const delay = (ms) => new Promise(r => setTimeout(r, ms));
 
-            for (const sup of scanTarget) {
+            for (const sup of suppliers) {
                 const supId = sup.id || sup.supplier_id;
                 const supName = sup.name || sup.supplier_name || sup.shop_name || `ID:${supId}`;
-                if (!supId) {
-                    debugInfo.push({ supplier: supName, error: 'IDなし', keys: Object.keys(sup) });
-                    continue;
-                }
+                if (!supId) continue;
+
                 try {
-                    // 複数の形式を試行（APIの正しい形式を特定するため）
-                    let data = null;
-                    const errors = {};
-
-                    // 形式1: POST /items { supplier_ids: [id] }
-                    if (!data) {
-                        try { data = await netseaFetch('/items', { supplier_ids: [parseInt(supId)] }, 'POST'); }
-                        catch (e) { errors.post_array = e.message; }
-                    }
-                    // 形式2: POST /items { supplier_id: id }
-                    if (!data) {
-                        try { data = await netseaFetch('/items', { supplier_id: parseInt(supId) }, 'POST'); }
-                        catch (e) { errors.post_single = e.message; }
-                    }
-                    // 形式3: GET /items?supplier_id=id
-                    if (!data) {
-                        try { data = await netseaFetch('/items', { supplier_id: supId }, 'GET'); }
-                        catch (e) { errors.get_single = e.message; }
-                    }
-                    // 形式4: GET /suppliers/{id}/items
-                    if (!data) {
-                        try { data = await netseaFetch(`/suppliers/${supId}/items`, {}, 'GET'); }
-                        catch (e) { errors.get_path = e.message; }
-                    }
-
-                    if (!data) {
-                        debugInfo.push({ supplier: supName, id: supId, errors });
-                        await delay(300);
-                        continue;
-                    }
+                    const data = await netseaFetch('/items', { supplier_ids: [parseInt(supId)] }, 'POST');
                     const rawItems = data.items || data.data || [];
                     const items = Array.isArray(rawItems) ? rawItems : [];
-                    debugInfo.push({
-                        supplier: supName,
-                        id: supId,
-                        itemCount: items.length,
-                        sampleKeys: items.length > 0 ? Object.keys(items[0]) : [],
-                        sampleItem: items.length > 0 ? JSON.stringify(items[0]).substring(0, 200) : 'none',
-                    });
+
+                    if (items.length > 0) {
+                        debugInfo.approved.push({ name: supName, id: supId, count: items.length });
+                    }
 
                     items.forEach(item => {
                         const wholesale = item.price || item.wholesale_price || item.unit_price || 0;
@@ -348,8 +313,14 @@ module.exports = async (req, res) => {
                         });
                     });
                 } catch (e) {
-                    debugInfo.push({ supplier: supName, id: supId, error: e.message });
+                    debugInfo.denied++;
+                    // 最初の3件だけエラー詳細を保存
+                    if (debugInfo.errors.length < 3) {
+                        debugInfo.errors.push({ id: supId, error: e.message });
+                    }
                 }
+                // レート制限回避
+                await delay(100);
             }
 
             // 粗利率の高い順にソート（卸値あるものを優先）
@@ -362,9 +333,9 @@ module.exports = async (req, res) => {
             return res.status(200).json({
                 items: allItems.slice(0, 50),
                 total: allItems.length,
-                suppliersScanned: scanTarget.length,
-                suppliersTotal: suppliers.length,
-                message: `${scanTarget.length}社(全${suppliers.length}社中)から${allItems.length}商品を取得`,
+                suppliersScanned: suppliers.length,
+                suppliersApproved: debugInfo.approved.length,
+                message: `${suppliers.length}社中 承認${debugInfo.approved.length}社から${allItems.length}商品を取得（${debugInfo.denied}社は未承認）`,
                 debug: debugInfo,
             });
         }
