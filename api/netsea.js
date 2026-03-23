@@ -14,10 +14,17 @@ const AMAZON_DOMAIN = 5; // Amazon.co.jp
 function netseaFetch(endpoint, params = {}, method = 'POST') {
     return new Promise((resolve, reject) => {
         const urlObj = new URL(`${NETSEA_API_BASE}${endpoint}`);
-        const postData = method === 'POST' ? JSON.stringify(params) : '';
+        let postData = '';
 
-        // GETの場合はクエリパラメータに追加
-        if (method === 'GET') {
+        if (method === 'POST') {
+            // x-www-form-urlencoded形式でボディを作成
+            const formParams = new URLSearchParams();
+            Object.entries(params).forEach(([k, v]) => {
+                formParams.append(k, Array.isArray(v) ? v.join(',') : v);
+            });
+            postData = formParams.toString();
+        } else {
+            // GETの場合はクエリパラメータに追加
             Object.entries(params).forEach(([k, v]) => urlObj.searchParams.set(k, v));
         }
 
@@ -34,7 +41,7 @@ function netseaFetch(endpoint, params = {}, method = 'POST') {
 
         // POSTの場合はContent-Typeを設定
         if (method === 'POST') {
-            options.headers['Content-Type'] = 'application/json';
+            options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
             options.headers['Content-Length'] = Buffer.byteLength(postData);
         }
 
