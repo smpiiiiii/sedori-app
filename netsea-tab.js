@@ -313,10 +313,15 @@
                 scanBtn.textContent = '🔍 承認済み商品をスキャン';
 
                 if (!data.items || data.items.length === 0) {
+                    var debugHtml = '';
+                    if (data.debug) {
+                        debugHtml = '<details style="margin-top:8px;font-size:11px;text-align:left;"><summary>🔧 デバッグ情報</summary><pre style="white-space:pre-wrap;word-break:break-all;max-height:200px;overflow:auto;background:rgba(0,0,0,.3);padding:8px;border-radius:6px;">' + esc(JSON.stringify(data.debug, null, 2)) + '</pre></details>';
+                    }
                     scanResults.innerHTML =
                         '<div class="netsea-scan-empty">' +
                             '<p>📭 ' + esc(data.message || '商品が見つかりませんでした') + '</p>' +
                             '<p class="hint">サプライヤーの取引承認が降りると、ここに利益商品が表示されます</p>' +
+                            debugHtml +
                         '</div>';
                     return;
                 }

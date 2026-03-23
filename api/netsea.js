@@ -249,10 +249,12 @@ module.exports = async (req, res) => {
 
             // サプライヤー一覧を取得
             let suppliers = [];
+            let rawSupplierData = null;
             try {
                 let sData;
                 try { sData = await netseaFetch('/suppliers', {}, 'GET'); }
                 catch (e) { sData = await netseaFetch('/suppliers', {}, 'POST'); }
+                rawSupplierData = sData;
                 const raw = sData.suppliers || sData.data || sData;
                 suppliers = Array.isArray(raw) ? raw : (raw && raw.data ? raw.data : []);
             } catch (e) {
@@ -260,54 +262,77 @@ module.exports = async (req, res) => {
             }
 
             if (suppliers.length === 0) {
-                return res.status(200).json({ items: [], total: 0, message: '承認済みサプライヤーがまだありません。取引申請の承認をお待ちください。' });
+                // デバッグ: APIが返した生データを含める
+                return res.status(200).json({
+                    items: [], total: 0,
+                    message: '承認済みサプライヤーが0件です',
+                    debug: {
+                        rawKeys: rawSupplierData ? Object.keys(rawSupplierData) : [],
+                        rawSample: rawSupplierData ? JSON.stringify(rawSupplierData).substring(0, 500) : 'null',
+                    }
+                });
             }
 
-            // 各サプライヤーの商品を取得（最大5社、各20商品）
-            const maxSuppliers = 5;
+            // 全サプライヤーの商品を取得
             const allItems = [];
-            const scanned = suppliers.slice(0, maxSuppliers);
+            const debugInfo = [];
 
-            for (const sup of scanned) {
+            for (const sup of suppliers) {
                 const supId = sup.id || sup.supplier_id;
-                if (!supId) continue;
+                const supName = sup.name || sup.supplier_name || sup.shop_name || `ID:${supId}`;
+                if (!supId) {
+                    debugInfo.push({ supplier: supName, error: 'IDなし', keys: Object.keys(sup) });
+                    continue;
+                }
                 try {
                     const data = await netseaFetch('/items', { supplier_ids: [parseInt(supId)] }, 'POST');
-                    const items = (data.items || []).slice(0, 20);
+                    const rawItems = data.items || data.data || [];
+                    const items = Array.isArray(rawItems) ? rawItems : [];
+                    debugInfo.push({
+                        supplier: supName,
+                        id: supId,
+                        itemCount: items.length,
+                        sampleKeys: items.length > 0 ? Object.keys(items[0]) : [],
+                        sampleItem: items.length > 0 ? JSON.stringify(items[0]).substring(0, 200) : 'none',
+                    });
+
                     items.forEach(item => {
-                        const wholesale = item.price || 0;
-                        const retail = item.msrp || item.retail_price || 0;
+                        const wholesale = item.price || item.wholesale_price || item.unit_price || 0;
+                        const retail = item.msrp || item.retail_price || item.suggested_retail_price || 0;
                         const margin = retail > 0 ? Math.round((1 - wholesale / retail) * 100) : 0;
-                        if (wholesale > 0) {
-                            allItems.push({
-                                id: item.direct_item_id || item.id,
-                                name: item.item_name || item.name || '',
-                                wholesale_price: wholesale,
-                                retail_price: retail,
-                                margin: margin,
-                                supplier: sup.name || sup.supplier_name || '',
-                                supplier_id: supId,
-                                image: item.image_url || item.main_image_url || null,
-                                jan: item.jan_code || item.branch_code || '',
-                                category: item.category_name || '',
-                                min_lot: item.min_lot || 1,
-                                netsea_url: `https://www.netsea.jp/shop/${supId}/detail/${item.direct_item_id || item.id}`,
-                            });
-                        }
+                        allItems.push({
+                            id: item.direct_item_id || item.id || item.item_id,
+                            name: item.item_name || item.name || item.title || '',
+                            wholesale_price: wholesale,
+                            retail_price: retail,
+                            margin: margin,
+                            supplier: supName,
+                            supplier_id: supId,
+                            image: item.image_url || item.main_image_url || item.thumbnail_url || null,
+                            jan: item.jan_code || item.branch_code || item.barcode || '',
+                            category: item.category_name || item.category || '',
+                            min_lot: item.min_lot || item.minimum_order || 1,
+                            netsea_url: `https://www.netsea.jp/shop/${supId}/detail/${item.direct_item_id || item.id || item.item_id}`,
+                        });
                     });
                 } catch (e) {
-                    console.log(`サプライヤー${supId}の商品取得エラー:`, e.message);
+                    debugInfo.push({ supplier: supName, id: supId, error: e.message });
                 }
             }
 
-            // 粗利率の高い順にソート
-            allItems.sort((a, b) => b.margin - a.margin);
+            // 粗利率の高い順にソート（卸値あるものを優先）
+            allItems.sort((a, b) => {
+                if (a.wholesale_price > 0 && b.wholesale_price === 0) return -1;
+                if (a.wholesale_price === 0 && b.wholesale_price > 0) return 1;
+                return b.margin - a.margin;
+            });
 
             return res.status(200).json({
-                items: allItems.slice(0, 30),
+                items: allItems.slice(0, 50),
                 total: allItems.length,
-                suppliersScanned: scanned.length,
-                message: `${scanned.length}社のサプライヤーから${allItems.length}商品を取得`,
+                suppliersScanned: suppliers.length,
+                message: `${suppliers.length}社のサプライヤーから${allItems.length}商品を取得`,
+                debug: debugInfo,
             });
         }
 
