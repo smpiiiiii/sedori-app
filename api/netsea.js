@@ -333,20 +333,23 @@ module.exports = async (req, res) => {
                 try {
                     const result = await netseaRawFetch('/items', { supplier_ids: [parseInt(supId)] });
 
-                    // デバッグ: 最初の3社の生レスポンスを保存
-                    if (debugInfo.rawSamples.length < 3) {
-                        debugInfo.rawSamples.push({
-                            id: supId,
-                            status: result.status,
-                            keys: result.body ? Object.keys(result.body) : [],
-                            raw: result.raw,
-                        });
-                    }
-
                     // errorがあっても、itemsもある場合はデータを取得
                     const body = result.body || {};
                     const rawItems = body.items || body.data || body.direct_items || [];
                     const items = Array.isArray(rawItems) ? rawItems : [];
+
+                    // デバッグ: 最初の3社の生レスポンスと商品サンプルを保存
+                    if (debugInfo.rawSamples.length < 3) {
+                        const sampleItem = items.length > 0 ? items[0] : null;
+                        debugInfo.rawSamples.push({
+                            supplierId: supId,
+                            status: result.status,
+                            bodyKeys: result.body ? Object.keys(result.body) : [],
+                            itemCount: items.length,
+                            itemKeys: sampleItem ? Object.keys(sampleItem) : [],
+                            sampleItem: sampleItem ? JSON.stringify(sampleItem).substring(0, 500) : 'none',
+                        });
+                    }
 
                     if (items.length > 0) {
                         debugInfo.approved.push({ name: supName, id: supId, count: items.length });
