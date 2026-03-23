@@ -429,24 +429,20 @@
         document.querySelectorAll('.tab-btn').forEach(function(btn) {
             btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
         });
-        // タブコンテンツ
-        document.getElementById('calcSection').style.display = tabName === 'calc' ? '' : 'none';
-        document.getElementById('researchSection').style.display = tabName === 'research' ? '' : 'none';
-        document.getElementById('scanSection').style.display = tabName === 'scan' ? '' : 'none';
-        document.getElementById('netseaSection').style.display = tabName === 'netsea' ? '' : 'none';
+        // タブコンテンツ（存在するタブのみ切り替え）
+        var sections = {
+            'calc': 'calcSection',
+            'netsea': 'netseaSection'
+        };
+        for (var key in sections) {
+            var el = document.getElementById(sections[key]);
+            if (el) el.style.display = key === tabName ? '' : 'none';
+        }
         // ヘッダー
         var title = document.getElementById('pageTitle');
         var addBtn = document.getElementById('addBtn');
         var csvBtn = document.getElementById('csvBtn');
-        if (tabName === 'research') {
-            title.textContent = '🔍 リサーチ';
-            addBtn.style.display = 'none';
-            csvBtn.style.display = 'none';
-        } else if (tabName === 'scan') {
-            title.textContent = '🚀 利益商品リサーチ';
-            addBtn.style.display = 'none';
-            csvBtn.style.display = 'none';
-        } else if (tabName === 'netsea') {
+        if (tabName === 'netsea') {
             title.textContent = '🏭 NETSEA卸売リサーチ';
             addBtn.style.display = 'none';
             csvBtn.style.display = 'none';
