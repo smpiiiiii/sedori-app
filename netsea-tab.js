@@ -266,6 +266,7 @@
                             '</div>' +
                             (p ? '<div class="netsea-price-row"><span>💳 Amazon手数料</span><span>-¥' + (p.amazonFee || 0).toLocaleString() + '</span></div>' : '') +
                             (p ? '<div class="netsea-price-row"><span>📦 FBA手数料</span><span>-¥' + (p.fbaFee || 0).toLocaleString() + '</span></div>' : '') +
+                            (p && p.shippingCost ? '<div class="netsea-price-row"><span>🚚 仕入れ送料</span><span>-¥' + (p.shippingCost || 0).toLocaleString() + '</span></div>' : '') +
                             (p ? '<div class="netsea-price-row total ' + profitClass + '"><span>💰 純利益</span><span>' + profitSign + '¥' + (p.profit || 0).toLocaleString() + ' (' + (p.profitRate || 0) + '%)</span></div>' : '') +
                         '</div>' +
                         '<div class="netsea-compare-actions">' +

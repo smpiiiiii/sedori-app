@@ -368,18 +368,20 @@ module.exports = async (req, res) => {
                 }
             }
 
-            // 利益計算
+            // 利益計算（送料含む）
             let profit = null;
             if (amazonData && amazonData.sellingPrice && wholesalePrice > 0) {
                 const amazonFee = Math.round(amazonData.sellingPrice * 0.15);
-                const fbaFee = 421; // 標準サイズ
-                const totalProfit = amazonData.sellingPrice - wholesalePrice - amazonFee - fbaFee;
+                const fbaFee = 421; // 標準サイズFBA手数料
+                const shippingCost = 700; // NETSEA仕入れ送料（概算）
+                const totalProfit = amazonData.sellingPrice - wholesalePrice - amazonFee - fbaFee - shippingCost;
                 const profitRate = Math.round((totalProfit / amazonData.sellingPrice) * 100);
                 profit = {
                     sellingPrice: amazonData.sellingPrice,
                     wholesalePrice,
                     amazonFee,
                     fbaFee,
+                    shippingCost,
                     profit: totalProfit,
                     profitRate,
                 };
