@@ -276,7 +276,7 @@ module.exports = async (req, res) => {
             // サプライヤーの商品を取得（デバッグ: 先頭10社）
             const allItems = [];
             const debugInfo = [];
-            const scanTarget = suppliers.slice(0, 10);
+            const scanTarget = suppliers.slice(0, 3);
 
             const delay = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -288,22 +288,35 @@ module.exports = async (req, res) => {
                     continue;
                 }
                 try {
-                    // POST → GET のフォールバック
-                    let data;
-                    try {
-                        data = await netseaFetch('/items', { supplier_ids: [parseInt(supId)] }, 'POST');
-                    } catch (postErr) {
-                        try {
-                            data = await netseaFetch('/items', { supplier_ids: supId }, 'GET');
-                        } catch (getErr) {
-                            debugInfo.push({
-                                supplier: supName, id: supId,
-                                postError: postErr.message,
-                                getError: getErr.message,
-                            });
-                            await delay(200);
-                            continue;
-                        }
+                    // 複数の形式を試行（APIの正しい形式を特定するため）
+                    let data = null;
+                    const errors = {};
+
+                    // 形式1: POST /items { supplier_ids: [id] }
+                    if (!data) {
+                        try { data = await netseaFetch('/items', { supplier_ids: [parseInt(supId)] }, 'POST'); }
+                        catch (e) { errors.post_array = e.message; }
+                    }
+                    // 形式2: POST /items { supplier_id: id }
+                    if (!data) {
+                        try { data = await netseaFetch('/items', { supplier_id: parseInt(supId) }, 'POST'); }
+                        catch (e) { errors.post_single = e.message; }
+                    }
+                    // 形式3: GET /items?supplier_id=id
+                    if (!data) {
+                        try { data = await netseaFetch('/items', { supplier_id: supId }, 'GET'); }
+                        catch (e) { errors.get_single = e.message; }
+                    }
+                    // 形式4: GET /suppliers/{id}/items
+                    if (!data) {
+                        try { data = await netseaFetch(`/suppliers/${supId}/items`, {}, 'GET'); }
+                        catch (e) { errors.get_path = e.message; }
+                    }
+
+                    if (!data) {
+                        debugInfo.push({ supplier: supName, id: supId, errors });
+                        await delay(300);
+                        continue;
                     }
                     const rawItems = data.items || data.data || [];
                     const items = Array.isArray(rawItems) ? rawItems : [];
