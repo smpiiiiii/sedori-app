@@ -273,11 +273,52 @@ module.exports = async (req, res) => {
                 });
             }
 
-            // 全サプライヤーの商品を取得（成功=承認済み、エラー=未承認）
+            // 全サプライヤーの商品を取得
             const allItems = [];
-            const debugInfo = { approved: [], denied: 0, errors: [] };
+            const debugInfo = { approved: [], denied: 0, rawSamples: [] };
 
             const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+            // errorフィールドを無視してレスポンス全体を返すfetch
+            function netseaRawFetch(endpoint, params) {
+                return new Promise((resolve, reject) => {
+                    const urlObj = new URL(`${NETSEA_API_BASE}${endpoint}`);
+                    const postData = JSON.stringify(params);
+                    const options = {
+                        hostname: urlObj.hostname,
+                        path: urlObj.pathname + urlObj.search,
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${NETSEA_TOKEN}`,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'Content-Length': Buffer.byteLength(postData),
+                        },
+                    };
+                    const req = https.request(options, (res) => {
+                        const chunks = [];
+                        res.on('data', chunk => chunks.push(chunk));
+                        res.on('end', () => {
+                            const buffer = Buffer.concat(chunks);
+                            const encoding = res.headers['content-encoding'];
+                            const parse = (str) => {
+                                try { resolve({ status: res.statusCode, body: JSON.parse(str), raw: str.substring(0, 300) }); }
+                                catch (e) { resolve({ status: res.statusCode, body: null, raw: str.substring(0, 300) }); }
+                            };
+                            if (encoding === 'gzip') {
+                                zlib.gunzip(buffer, (err, decoded) => err ? reject(err) : parse(decoded.toString()));
+                            } else if (encoding === 'deflate') {
+                                zlib.inflate(buffer, (err, decoded) => err ? reject(err) : parse(decoded.toString()));
+                            } else {
+                                parse(buffer.toString());
+                            }
+                        });
+                    });
+                    req.on('error', reject);
+                    req.write(postData);
+                    req.end();
+                });
+            }
 
             for (const sup of suppliers) {
                 const supId = sup.id || sup.supplier_id;
@@ -285,12 +326,27 @@ module.exports = async (req, res) => {
                 if (!supId) continue;
 
                 try {
-                    const data = await netseaFetch('/items', { supplier_ids: [parseInt(supId)] }, 'POST');
-                    const rawItems = data.items || data.data || [];
+                    const result = await netseaRawFetch('/items', { supplier_ids: [parseInt(supId)] });
+
+                    // デバッグ: 最初の3社の生レスポンスを保存
+                    if (debugInfo.rawSamples.length < 3) {
+                        debugInfo.rawSamples.push({
+                            id: supId,
+                            status: result.status,
+                            keys: result.body ? Object.keys(result.body) : [],
+                            raw: result.raw,
+                        });
+                    }
+
+                    // errorがあっても、itemsもある場合はデータを取得
+                    const body = result.body || {};
+                    const rawItems = body.items || body.data || body.direct_items || [];
                     const items = Array.isArray(rawItems) ? rawItems : [];
 
                     if (items.length > 0) {
                         debugInfo.approved.push({ name: supName, id: supId, count: items.length });
+                    } else {
+                        debugInfo.denied++;
                     }
 
                     items.forEach(item => {
@@ -314,10 +370,6 @@ module.exports = async (req, res) => {
                     });
                 } catch (e) {
                     debugInfo.denied++;
-                    // 最初の3件だけエラー詳細を保存
-                    if (debugInfo.errors.length < 3) {
-                        debugInfo.errors.push({ id: supId, error: e.message });
-                    }
                 }
                 // レート制限回避
                 await delay(100);
