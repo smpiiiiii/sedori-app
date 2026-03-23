@@ -271,22 +271,30 @@ module.exports = async (req, res) => {
                 }
             }
 
-            // JANで見つからない場合、キーワード検索
+            // JANで見つからない場合、キーワード検索（短縮リトライ付き）
             if (!amazonData && name) {
-                try {
-                    const data = await keepaFetch('search', { type: 'product', term: name, stats: 180, page: 0 });
-                    if (data.products && data.products.length > 0) {
-                        const best = data.products[0];
-                        amazonData = formatKeepaProduct(best);
-                        amazonData.asin = best.asin;
-                        amazonData.title = best.title;
-                        amazonData.url = `https://www.amazon.co.jp/dp/${best.asin}`;
-                        amazonData.imageUrl = best.imagesCSV
-                            ? `https://images-na.ssl-images-amazon.com/images/I/${best.imagesCSV.split(',')[0]}`
-                            : null;
+                const words = name.split(/[\s\u3000]+/);
+                const searchTerms = [name];
+                if (words.length > 2) searchTerms.push(words.slice(0, 3).join(' '));
+                if (words.length > 2) searchTerms.push(words.slice(0, 2).join(' '));
+
+                for (const term of searchTerms) {
+                    if (amazonData) break;
+                    try {
+                        const data = await keepaFetch('search', { type: 'product', term, stats: 180, page: 0 });
+                        if (data.products && data.products.length > 0) {
+                            const best = data.products[0];
+                            amazonData = formatKeepaProduct(best);
+                            amazonData.asin = best.asin;
+                            amazonData.title = best.title;
+                            amazonData.url = `https://www.amazon.co.jp/dp/${best.asin}`;
+                            amazonData.imageUrl = best.imagesCSV
+                                ? `https://images-na.ssl-images-amazon.com/images/I/${best.imagesCSV.split(',')[0]}`
+                                : null;
+                        }
+                    } catch (e) {
+                        console.log(`検索失敗 [${term}]:`, e.message);
                     }
-                } catch (e) {
-                    console.log('キーワード検索失敗:', e.message);
                 }
             }
 

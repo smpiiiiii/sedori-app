@@ -233,12 +233,14 @@
             .then(function(res) { return res.json(); })
             .then(function(data) {
                 if (!data.found) {
+                    var amazonSearchUrl = 'https://www.amazon.co.jp/s?k=' + encodeURIComponent(name);
                     body.innerHTML =
                         '<div class="netsea-compare-result">' +
                             '<div class="netsea-compare-header">📦 ' + esc(name) + '</div>' +
                             '<div class="netsea-compare-not-found">' +
-                                '<p>❌ Amazonで該当商品が見つかりませんでした</p>' +
-                                '<p class="hint">JANコード・キーワードでのマッチングに失敗しました。</p>' +
+                                '<p>🔍 自動検索でマッチしませんでした</p>' +
+                                '<p class="hint">Amazonで直接検索して確認してください</p>' +
+                                '<a class="btn btn-outline" href="' + amazonSearchUrl + '" target="_blank" style="margin-top:10px;justify-content:center;display:flex;">🛒 Amazonで検索する</a>' +
                             '</div>' +
                         '</div>';
                     return;
@@ -269,8 +271,7 @@
                         '<div class="netsea-compare-actions">' +
                             '<a class="btn btn-outline" href="' + esc(a.url || '') + '" target="_blank">🔗 Amazonで確認</a>' +
                             '<button class="btn btn-success netsea-add-profit" data-title="' + esc(a.title || name).replace(/"/g, '&quot;') + '" data-asin="' + esc(a.asin || '') + '" data-sell="' + (a.sellingPrice || '') + '">📊 利益計算に追加</button>' +
-                        '</div>' +
-                    '</div>';
+                        '</div>';
 
                 var addBtn = body.querySelector('.netsea-add-profit');
                 if (addBtn) {
