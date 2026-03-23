@@ -857,6 +857,79 @@ body {
 }
 .netsea-compare-actions .btn { flex: 1; justify-content: center; }
 
+/* おすすめ商品セクション */
+.netsea-recommend-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+.netsea-recommend-header h3 {
+    font-size: 16px;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, #fd7272, #f39c12);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.netsea-recommend-subtitle {
+    font-size: 11px;
+    color: var(--text2);
+    display: block;
+    margin-bottom: 14px;
+}
+.netsea-recommend-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.netsea-recommend-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: all .2s;
+}
+.netsea-recommend-card:hover {
+    border-color: #f39c12;
+    transform: translateX(4px);
+}
+.recommend-rank {
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    font-weight: 900;
+    font-size: 13px;
+    color: #fff;
+    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    flex-shrink: 0;
+}
+.netsea-recommend-card:nth-child(1) .recommend-rank { background: linear-gradient(135deg, #f39c12, #e67e22); }
+.netsea-recommend-card:nth-child(2) .recommend-rank { background: linear-gradient(135deg, #74b9ff, #0984e3); }
+.netsea-recommend-card:nth-child(3) .recommend-rank { background: linear-gradient(135deg, #00b894, #00cec9); }
+.recommend-info { flex: 1; min-width: 0; }
+.recommend-category { font-size: 10px; color: var(--text2); margin-bottom: 2px; }
+.recommend-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recommend-price { font-size: 12px; color: #f39c12; font-weight: 700; margin-top: 2px; }
+.netsea-recommend-tips {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: rgba(243,156,18,.06);
+    border: 1px solid rgba(243,156,18,.15);
+    border-radius: 10px;
+    font-size: 11px;
+    color: var(--text2);
+    line-height: 1.6;
+}
+.netsea-recommend-tips p { margin: 0; }
+.netsea-recommend-tips strong { color: var(--text); }
+
 /* NETSEA モバイル対応 */
 @media (max-width: 768px) {
     .netsea-filters { grid-template-columns: 1fr; }
