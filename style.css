@@ -923,6 +923,26 @@ body {
 .verdict-hot { color: #fd7272; }
 .verdict-ok { color: #74b9ff; }
 .netsea-recommend-card { cursor: pointer; }
+.recommend-links {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+.recommend-links a {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all .2s;
+}
+.link-netsea { background: rgba(243,156,18,.15); color: #f39c12; }
+.link-netsea:hover { background: rgba(243,156,18,.3); }
+.link-rakuten { background: rgba(191,49,49,.15); color: #e74c3c; }
+.link-rakuten:hover { background: rgba(191,49,49,.3); }
+.link-yahoo { background: rgba(255,0,102,.12); color: #ff6b81; }
+.link-yahoo:hover { background: rgba(255,0,102,.25); }
 .netsea-recommend-tips {
     margin-top: 14px;
     padding: 12px 14px;
