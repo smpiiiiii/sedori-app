@@ -326,7 +326,12 @@
                     return;
                 }
 
-                scanResults.innerHTML = '<div class="netsea-result-count">🏭 ' + data.message + '</div>';
+
+                var debugHtml2 = '';
+                if (data.debug) {
+                    debugHtml2 = '<details style="margin:8px 0;font-size:11px;"><summary>🔧 デバッグ情報</summary><pre style="white-space:pre-wrap;word-break:break-all;max-height:300px;overflow:auto;background:rgba(0,0,0,.3);padding:8px;border-radius:6px;">' + esc(JSON.stringify(data.debug, null, 2)) + '</pre></details>';
+                }
+                scanResults.innerHTML = '<div class="netsea-result-count">🏭 ' + data.message + '</div>' + debugHtml2;
 
                 data.items.forEach(function(item, idx) {
                     var card = document.createElement('div');
