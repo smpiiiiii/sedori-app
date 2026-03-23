@@ -949,6 +949,8 @@ body {
 .link-rakuten:hover { background: rgba(191,49,49,.3); }
 .link-yahoo { background: rgba(255,0,102,.12); color: #ff6b81; }
 .link-yahoo:hover { background: rgba(255,0,102,.25); }
+.link-amazon { background: rgba(255,153,0,.12); color: #ff9900; }
+.link-amazon:hover { background: rgba(255,153,0,.25); }
 .link-qoo10 { background: rgba(233,30,99,.12); color: #e91e63; }
 .link-qoo10:hover { background: rgba(233,30,99,.25); }
 .link-stylek { background: rgba(0,188,212,.12); color: #00bcd4; }
