@@ -699,14 +699,20 @@ body {
 
 /* ===== NETSEAタブ ===== */
 .netsea-status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     padding: 10px 16px;
     border-radius: 10px;
     margin-bottom: 16px;
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 600;
     text-align: center;
     transition: all .3s;
 }
+.netsea-login-link { font-size: 11px; color: #f39c12; text-decoration: none; padding: 4px 10px; border: 1px solid rgba(243,156,18,.3); border-radius: 8px; white-space: nowrap; }
+.netsea-login-link:hover { background: rgba(243,156,18,.1); }
 .netsea-status-bar.connected { background: rgba(0,184,148,.12); color: var(--green2); border: 1px solid rgba(0,184,148,.25); }
 .netsea-status-bar.demo { background: rgba(253,203,110,.12); color: var(--orange); border: 1px solid rgba(253,203,110,.25); }
 .netsea-status-bar.error { background: rgba(255,107,107,.12); color: var(--red); border: 1px solid rgba(255,107,107,.25); }
