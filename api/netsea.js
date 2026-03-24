@@ -521,6 +521,51 @@ module.exports = async (req, res) => {
             });
         }
 
+
+        // ===== ウォッチリスト追加（価格アラートボット用） =====
+        if (action === 'watchlist-add') {
+            const fs = require('fs');
+            const watchlistPath = require('path').join(__dirname, '..', 'watchlist.json');
+            let watchlist = [];
+            try { watchlist = JSON.parse(fs.readFileSync(watchlistPath, 'utf-8')); } catch(e) {}
+
+            // POSTボディまたはクエリパラメータから商品情報取得
+            const jan = url.searchParams.get('jan') || '';
+            const name = url.searchParams.get('name') || '';
+            const netseaPrice = parseInt(url.searchParams.get('price')) || 0;
+            const supplier = url.searchParams.get('supplier') || '';
+
+            if (!jan || jan.length < 8) {
+                return res.status(400).json({ error: 'JANコードが必要です（8桁以上）' });
+            }
+
+            // 重複チェック
+            const exists = watchlist.findIndex(w => w.jan === jan);
+            const item = { jan, name, netsea_price: netseaPrice, supplier, updated_at: new Date().toISOString() };
+            if (exists >= 0) {
+                watchlist[exists] = { ...watchlist[exists], ...item };
+            } else {
+                item.added_at = new Date().toISOString();
+                watchlist.push(item);
+            }
+            fs.writeFileSync(watchlistPath, JSON.stringify(watchlist, null, 2), 'utf-8');
+
+            return res.status(200).json({
+                success: true,
+                message: `${exists >= 0 ? '更新' : '追加'}しました: ${name}`,
+                total: watchlist.length,
+            });
+        }
+
+        // ===== ウォッチリスト一覧 =====
+        if (action === 'watchlist') {
+            const fs = require('fs');
+            const watchlistPath = require('path').join(__dirname, '..', 'watchlist.json');
+            let watchlist = [];
+            try { watchlist = JSON.parse(fs.readFileSync(watchlistPath, 'utf-8')); } catch(e) {}
+            return res.status(200).json({ watchlist, total: watchlist.length });
+        }
+
         return res.status(400).json({ error: '不明なアクション: ' + action });
     } catch (err) {
         console.error('NETSEA API Error:', err);

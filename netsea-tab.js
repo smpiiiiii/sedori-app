@@ -407,6 +407,7 @@
                 '</div>' +
                 '<div class="result-actions">' +
                     '<button class="btn-compare-amazon" data-name="' + esc(item.name).replace(/"/g, '&quot;') + '" data-jan="' + esc(item.jan || '') + '" data-price="' + item.wholesale_price + '">🔍 利益計算</button>' +
+                    (item.jan && item.jan.length >= 8 ? '<button class="btn-watch" data-jan="' + esc(item.jan) + '" data-name="' + esc(item.name).replace(/"/g, '&quot;') + '" data-price="' + item.wholesale_price + '" data-supplier="' + esc(item.supplier || '').replace(/"/g, '&quot;') + '" style="background:#7c4dff;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;margin-top:4px">📱 監視追加</button>' : '') +
                 '</div>';
 
             card.querySelector('.btn-compare-amazon').addEventListener('click', function() {
@@ -416,6 +417,30 @@
                     parseInt(this.getAttribute('data-price'))
                 );
             });
+
+            var watchBtn = card.querySelector('.btn-watch');
+            if (watchBtn) {
+                watchBtn.addEventListener('click', function() {
+                    var btn = this;
+                    var params = 'action=watchlist-add' +
+                        '&jan=' + encodeURIComponent(btn.getAttribute('data-jan')) +
+                        '&name=' + encodeURIComponent(btn.getAttribute('data-name')) +
+                        '&price=' + btn.getAttribute('data-price') +
+                        '&supplier=' + encodeURIComponent(btn.getAttribute('data-supplier'));
+                    btn.disabled = true;
+                    btn.textContent = '⏳ 追加中...';
+                    fetch('/api/netsea?' + params)
+                        .then(function(r) { return r.json(); })
+                        .then(function(d) {
+                            btn.textContent = '✅ 監視中';
+                            btn.style.background = '#388e3c';
+                        })
+                        .catch(function() {
+                            btn.textContent = '❌ エラー';
+                            btn.disabled = false;
+                        });
+                });
+            }
 
             scanResults.appendChild(card);
         });
