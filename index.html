@@ -26,6 +26,7 @@
     <h1 id="pageTitle">📦 セドリ利益計算</h1>
     <div class="header-actions">
         <button class="btn btn-outline btn-sm" id="csvBtn">📄 <span>CSV</span></button>
+        <button class="btn btn-scan btn-sm" onclick="openBarcodeScanner()">📷 <span>スキャン</span></button>
         <button class="btn btn-primary btn-sm" id="addBtn">＋ <span>商品追加</span></button>
     </div>
 </div>
@@ -366,6 +367,7 @@
                     <div class="profit-row"><span>FBA手数料</span><span id="prevFBA">-¥0</span></div>
                     <div class="profit-row"><span>送料</span><span id="prevShip">-¥0</span></div>
                     <div class="profit-row total"><span>純利益</span><span id="prevProfit">¥0</span></div>
+                    <div class="profit-row breakeven" id="prevBreakeven" style="display:none"><span>📊 損益分岐点（仕入上限）</span><span id="prevBreakevenVal">¥0</span></div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -404,7 +406,38 @@
     </div>
 </div>
 
+<!-- バーコードスキャンモーダル -->
+<div class="modal-overlay hidden" id="barcodeModal">
+    <div class="modal barcode-modal">
+        <div class="modal-header">
+            <h3>📷 バーコードスキャン</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="barcode-camera">
+                <video id="barcodeVideo" playsinline autoplay muted></video>
+                <canvas id="barcodeCanvas" style="display:none"></canvas>
+                <div class="barcode-overlay">
+                    <div class="barcode-guide"></div>
+                </div>
+            </div>
+            <div class="barcode-status" id="barcodeStatus">📷 カメラを起動中...</div>
+            <div id="barcodeManualInput" style="display:none;margin-top:12px;">
+                <div class="form-group">
+                    <label>JANコード手入力</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" id="manualJANInput" placeholder="4901234567890" inputmode="numeric" style="flex:1;">
+                        <button class="btn btn-success" onclick="submitManualJAN()">検索</button>
+                    </div>
+                </div>
+            </div>
+            <div id="barcodeResult"></div>
+        </div>
+    </div>
+</div>
+
 <script src="app.js"></script>
 <script src="netsea-tab.js"></script>
+<script src="barcode.js"></script>
 </body>
 </html>

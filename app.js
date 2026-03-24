@@ -362,6 +362,16 @@
         var profitEl = document.getElementById('prevProfit');
         profitEl.textContent = '¥' + r.profit.toLocaleString() + ' (' + r.profitRate.toFixed(1) + '%)';
         profitEl.style.color = r.profit >= 0 ? '#55efc4' : '#ff6b6b';
+
+        // 損益分岐点（販売価格が入力済みの場合のみ表示）
+        var breakevenRow = document.getElementById('prevBreakeven');
+        var breakevenVal = document.getElementById('prevBreakevenVal');
+        if (breakevenRow && breakevenVal && sellPrice > 0) {
+            var maxBuy = sellPrice - r.amazonFee - r.fbaFee - r.shipping;
+            breakevenRow.style.display = '';
+            breakevenVal.textContent = '¥' + maxBuy.toLocaleString();
+            breakevenVal.style.color = '#ffd93d';
+        }
     }
 
     // ===== CSV処理 =====
