@@ -36,6 +36,10 @@ const MIN_PROFIT_RATE = 10;          // 10%
 /** ウォッチリストファイル */
 const WATCHLIST_FILE = path.join(__dirname, 'watchlist.json');
 
+/** サイレント通知時間帯（深夜はプッシュ通知音を鳴らさない） */
+const SILENT_HOUR_START = 2;  // 2時から
+const SILENT_HOUR_END = 6;    // 6時まで
+
 /** 1回のチェックで処理するアイテム数（Keepa APIレート制限対策） */
 const BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 3000;
@@ -208,11 +212,20 @@ async function sendDiscordAlert(item, amazonData, priceChange, profitData) {
         embed.thumbnail = { url: amazonData.imageUrl };
     }
 
-    const body = JSON.stringify({
+    // 深夜2〜6時はサイレント通知（プッシュ通知音なし）
+    const hour = new Date().getHours();
+    const isSilent = hour >= SILENT_HOUR_START && hour < SILENT_HOUR_END;
+
+    const payload = {
         username: '📱 せどり価格アラート',
         avatar_url: 'https://cdn-icons-png.flaticon.com/512/2331/2331941.png',
         embeds: [embed],
-    });
+    };
+    if (isSilent) {
+        payload.flags = 4096; // SUPPRESS_NOTIFICATIONS
+        console.log(`  🔇 サイレントモード（${hour}時）`);
+    }
+    const body = JSON.stringify(payload);
 
     return new Promise((resolve, reject) => {
         const url = new URL(DISCORD_WEBHOOK_URL);
