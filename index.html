@@ -60,7 +60,7 @@
         </div>
     </div>
 
-    <!-- 商品テーブル -->
+    <!-- 商品リスト -->
     <div class="table-card">
         <div class="table-header">
             <h2>商品リスト</h2>
@@ -80,7 +80,16 @@
             <span class="filter-chip" data-filter="loss">⚠️ 赤字</span>
         </div>
 
-        <table class="data-table">
+        <!-- モバイルソートバー -->
+        <div class="mobile-sort-bar">
+            <span class="sort-label">並替:</span>
+            <button class="sort-chip active" data-sort="profit">利益順</button>
+            <button class="sort-chip" data-sort="profitRate">利益率順</button>
+            <button class="sort-chip" data-sort="buyPrice">仕入値順</button>
+        </div>
+
+        <!-- PC: テーブル表示 -->
+        <table class="data-table desktop-only">
             <thead>
                 <tr>
                     <th data-sort="name">商品名 ↕</th>
@@ -94,6 +103,9 @@
             </thead>
             <tbody id="productBody"></tbody>
         </table>
+
+        <!-- モバイル: カード表示 -->
+        <div class="product-cards mobile-only" id="productCards"></div>
 
         <div id="emptyState" class="empty-state">
             <div class="icon">📦</div>

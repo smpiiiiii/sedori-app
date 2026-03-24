@@ -194,6 +194,92 @@
         document.querySelectorAll('.data-table th[data-sort]').forEach(function(th) {
             th.classList.toggle('sorted', th.getAttribute('data-sort') === currentSort.key);
         });
+
+        // ===== モバイル用カード描画 =====
+        var cardsEl = document.getElementById('productCards');
+        if (cardsEl) {
+            cardsEl.innerHTML = '';
+            filtered.forEach(function(p) {
+                var r = calcProfit(p.sellPrice, p.buyPrice, p.category, p.fbaSize, p.shipping);
+                var catLabel = CATEGORY_FEES[p.category] ? CATEGORY_FEES[p.category].label.split('（')[0] : '一般';
+                var rateClass = r.profitRate >= 20 ? 'high' : r.profitRate >= 10 ? 'mid' : 'low';
+                var profitClass = r.profit >= 0 ? 'profit-positive' : 'profit-negative';
+
+                var card = document.createElement('div');
+                card.className = 'product-card';
+                card.setAttribute('data-id', p.id);
+                card.innerHTML =
+                    '<div class="card-swipe-delete">🗑 削除</div>' +
+                    '<div class="card-content">' +
+                        '<div class="card-top">' +
+                            '<div class="card-name">' + escHtml(p.name || '') + '</div>' +
+                            '<span class="rate-badge ' + rateClass + '">' + r.profitRate.toFixed(1) + '%</span>' +
+                        '</div>' +
+                        (p.asin ? '<div class="card-asin">' + escHtml(p.asin) + '</div>' : '') +
+                        '<div class="card-prices">' +
+                            '<div class="card-price-item">' +
+                                '<span class="card-price-label">仕入</span>' +
+                                '<span class="card-price-val">¥' + p.buyPrice.toLocaleString() + '</span>' +
+                            '</div>' +
+                            '<div class="card-price-arrow">→</div>' +
+                            '<div class="card-price-item">' +
+                                '<span class="card-price-label">販売</span>' +
+                                '<span class="card-price-val">¥' + p.sellPrice.toLocaleString() + '</span>' +
+                            '</div>' +
+                            '<div class="card-price-item profit-item">' +
+                                '<span class="card-price-label">利益</span>' +
+                                '<span class="card-price-val ' + profitClass + '">¥' + r.profit.toLocaleString() + '</span>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="card-bottom">' +
+                            '<span class="category-badge">' + escHtml(catLabel) + '</span>' +
+                            '<button class="btn btn-ghost btn-sm" onclick="sedoriApp.deleteProduct(\'' + p.id + '\')">🗑</button>' +
+                        '</div>' +
+                    '</div>';
+                cardsEl.appendChild(card);
+
+                // スワイプ削除
+                initSwipeDelete(card, p.id);
+            });
+        }
+    }
+
+    // ===== スワイプ削除 =====
+    function initSwipeDelete(card, productId) {
+        var startX = 0, currentX = 0, dragging = false;
+        var content = card.querySelector('.card-content');
+
+        card.addEventListener('touchstart', function(e) {
+            startX = e.touches[0].clientX;
+            dragging = true;
+            content.style.transition = 'none';
+        });
+        card.addEventListener('touchmove', function(e) {
+            if (!dragging) return;
+            currentX = e.touches[0].clientX - startX;
+            if (currentX < 0) {
+                content.style.transform = 'translateX(' + Math.max(currentX, -120) + 'px)';
+            }
+        });
+        card.addEventListener('touchend', function() {
+            dragging = false;
+            content.style.transition = 'transform .3s ease';
+            if (currentX < -80) {
+                // 削除確定
+                content.style.transform = 'translateX(-100%)';
+                card.style.transition = 'height .3s ease, opacity .3s ease, margin .3s ease';
+                card.style.height = '0';
+                card.style.opacity = '0';
+                card.style.marginBottom = '0';
+                card.style.overflow = 'hidden';
+                setTimeout(function() {
+                    window.sedoriApp.deleteProduct(productId);
+                }, 300);
+            } else {
+                content.style.transform = 'translateX(0)';
+            }
+            currentX = 0;
+        });
     }
 
     function escHtml(s) {
