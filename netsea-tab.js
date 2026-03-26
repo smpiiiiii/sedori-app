@@ -167,6 +167,13 @@
                     '</div>' +
                 '</div>' +
                 '<div class="result-actions">' +
+                    (function() {
+                        var netseaLink = item.netsea_url || '';
+                        if (!netseaLink && item.id) {
+                            netseaLink = 'https://www.netsea.jp/shop/' + (item.supplier_id || '') + '/' + item.id;
+                        }
+                        return netseaLink ? '<a class="btn-netsea-link" href="' + esc(netseaLink) + '" target="_blank" rel="noopener">🛒 NETSEAで購入</a>' : '';
+                    })() +
                     '<button class="btn-compare-amazon" data-name="' + esc(item.name).replace(/"/g, '&quot;') + '" data-jan="' + esc(item.jan || '') + '" data-price="' + (item.wholesale_price || 0) + '">🔍 Amazon比較</button>' +
                     '<button class="btn-add-calc" data-title="' + esc(item.name).replace(/"/g, '&quot;') + '" data-asin="" data-price="">📊 利益計算</button>' +
                 '</div>';
@@ -381,69 +388,102 @@
             });
         };
 
-        data.items.forEach(function(item, idx) {
-            var card = document.createElement('div');
-            card.className = 'result-card netsea-scan-card';
+        // 表示件数を制限してクラッシュ防止（20件ずつ表示）
+        var PAGE_SIZE = 20;
+        window._scanShowCount = PAGE_SIZE;
 
-            var marginClass = item.margin >= 40 ? 'margin-high' : (item.margin >= 20 ? 'margin-mid' : 'margin-low');
+        function renderScanCards(items, container, startIdx, count) {
+            var end = Math.min(startIdx + count, items.length);
+            for (var i = startIdx; i < end; i++) {
+                var item = items[i];
+                var card = document.createElement('div');
+                card.className = 'result-card netsea-scan-card';
 
-            card.innerHTML =
-                (item.image ? '<img class="result-img" src="' + esc(item.image) + '" alt="" onerror="this.style.display=\'none\'">' : '') +
-                '<div class="result-info">' +
-                    '<div class="result-title">' + esc(item.name) + '</div>' +
-                    '<div class="result-meta">' +
-                        '<span class="result-tag netsea-wholesale">🏭 卸値 ¥' + item.wholesale_price.toLocaleString() + '</span>' +
-                        '<span class="result-tag netsea-retail">🏪 参考 ¥' + (item.retail_price || 0).toLocaleString() + '</span>' +
-                        '<span class="result-tag ' + marginClass + '">📊 粗利 ' + item.margin + '%</span>' +
+                var marginClass = item.margin >= 40 ? 'margin-high' : (item.margin >= 20 ? 'margin-mid' : 'margin-low');
+                var netseaLink = item.netsea_url || ('https://www.netsea.jp/shop/' + (item.supplier_id || '') + '/' + (item.id || ''));
+
+                card.innerHTML =
+                    (item.image ? '<img class="result-img" src="' + esc(item.image) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">' : '') +
+                    '<div class="result-info">' +
+                        '<div class="result-title">' + esc(item.name) + '</div>' +
+                        '<div class="result-meta">' +
+                            '<span class="result-tag netsea-wholesale">🏭 卸値 ¥' + (item.wholesale_price || 0).toLocaleString() + '</span>' +
+                            '<span class="result-tag netsea-retail">🏪 参考 ¥' + (item.retail_price || 0).toLocaleString() + '</span>' +
+                            '<span class="result-tag ' + marginClass + '">📊 粗利 ' + (item.margin || 0) + '%</span>' +
+                        '</div>' +
+                        '<div class="netsea-item-detail">' +
+                            '<span>🏢 ' + esc(item.supplier || '') + '</span>' +
+                            (item.jan ? '<span>📦 JAN: ' + esc(item.jan) + '</span>' : '') +
+                        '</div>' +
+                        '<div class="recommend-links" style="margin-top:6px;">' +
+                            '<a href="' + esc(netseaLink) + '" target="_blank" class="link-netsea">🛒 NETSEAで購入</a>' +
+                            '<a href="https://www.amazon.co.jp/s?k=' + encodeURIComponent(item.name) + '" target="_blank" class="link-amazon">🔗 Amazon相場</a>' +
+                        '</div>' +
                     '</div>' +
-                    '<div class="netsea-item-detail">' +
-                        '<span>🏢 ' + esc(item.supplier) + '</span>' +
-                        (item.jan ? '<span>📦 JAN: ' + esc(item.jan) + '</span>' : '') +
-                    '</div>' +
-                    '<div class="recommend-links" style="margin-top:6px;">' +
-                        '<a href="' + esc(item.netsea_url) + '" target="_blank" class="link-netsea">🏭 NETSEAで購入</a>' +
-                        '<a href="https://www.amazon.co.jp/s?k=' + encodeURIComponent(item.name) + '" target="_blank" class="link-amazon">🔗 Amazon相場</a>' +
-                    '</div>' +
-                '</div>' +
-                '<div class="result-actions">' +
-                    '<button class="btn-compare-amazon" data-name="' + esc(item.name).replace(/"/g, '&quot;') + '" data-jan="' + esc(item.jan || '') + '" data-price="' + item.wholesale_price + '">🔍 利益計算</button>' +
-                    (item.jan && item.jan.length >= 8 ? '<button class="btn-watch" data-jan="' + esc(item.jan) + '" data-name="' + esc(item.name).replace(/"/g, '&quot;') + '" data-price="' + item.wholesale_price + '" data-supplier="' + esc(item.supplier || '').replace(/"/g, '&quot;') + '" style="background:#7c4dff;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;margin-top:4px">📱 監視追加</button>' : '') +
-                '</div>';
+                    '<div class="result-actions">' +
+                        '<button class="btn-compare-amazon" data-name="' + esc(item.name).replace(/"/g, '&quot;') + '" data-jan="' + esc(item.jan || '') + '" data-price="' + (item.wholesale_price || 0) + '">🔍 利益計算</button>' +
+                        (item.jan && item.jan.length >= 8 ? '<button class="btn-watch" data-jan="' + esc(item.jan) + '" data-name="' + esc(item.name).replace(/"/g, '&quot;') + '" data-price="' + (item.wholesale_price || 0) + '" data-supplier="' + esc(item.supplier || '').replace(/"/g, '&quot;') + '" style="background:#7c4dff;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;margin-top:4px">📱 監視追加</button>' : '') +
+                    '</div>';
 
-            card.querySelector('.btn-compare-amazon').addEventListener('click', function() {
-                compareWithAmazon(
-                    this.getAttribute('data-name'),
-                    this.getAttribute('data-jan'),
-                    parseInt(this.getAttribute('data-price'))
-                );
-            });
-
-            var watchBtn = card.querySelector('.btn-watch');
-            if (watchBtn) {
-                watchBtn.addEventListener('click', function() {
-                    var btn = this;
-                    var params = 'action=watchlist-add' +
-                        '&jan=' + encodeURIComponent(btn.getAttribute('data-jan')) +
-                        '&name=' + encodeURIComponent(btn.getAttribute('data-name')) +
-                        '&price=' + btn.getAttribute('data-price') +
-                        '&supplier=' + encodeURIComponent(btn.getAttribute('data-supplier'));
-                    btn.disabled = true;
-                    btn.textContent = '⏳ 追加中...';
-                    fetch('/api/netsea?' + params)
-                        .then(function(r) { return r.json(); })
-                        .then(function(d) {
-                            btn.textContent = '✅ 監視中';
-                            btn.style.background = '#388e3c';
-                        })
-                        .catch(function() {
-                            btn.textContent = '❌ エラー';
-                            btn.disabled = false;
-                        });
+                card.querySelector('.btn-compare-amazon').addEventListener('click', function() {
+                    compareWithAmazon(
+                        this.getAttribute('data-name'),
+                        this.getAttribute('data-jan'),
+                        parseInt(this.getAttribute('data-price'))
+                    );
                 });
-            }
 
-            scanResults.appendChild(card);
-        });
+                var watchBtn = card.querySelector('.btn-watch');
+                if (watchBtn) {
+                    watchBtn.addEventListener('click', function() {
+                        var btn = this;
+                        var params = 'action=watchlist-add' +
+                            '&jan=' + encodeURIComponent(btn.getAttribute('data-jan')) +
+                            '&name=' + encodeURIComponent(btn.getAttribute('data-name')) +
+                            '&price=' + btn.getAttribute('data-price') +
+                            '&supplier=' + encodeURIComponent(btn.getAttribute('data-supplier'));
+                        btn.disabled = true;
+                        btn.textContent = '⏳ 追加中...';
+                        fetch('/api/netsea?' + params)
+                            .then(function(r) { return r.json(); })
+                            .then(function(d) {
+                                btn.textContent = '✅ 監視中';
+                                btn.style.background = '#388e3c';
+                            })
+                            .catch(function() {
+                                btn.textContent = '❌ エラー';
+                                btn.disabled = false;
+                            });
+                    });
+                }
+
+                container.appendChild(card);
+            }
+        }
+
+        // 最初の20件だけ描画
+        renderScanCards(data.items, scanResults, 0, PAGE_SIZE);
+
+        // 「もっと見る」ボタン
+        if (data.items.length > PAGE_SIZE) {
+            var moreBtn = document.createElement('button');
+            moreBtn.className = 'btn btn-outline';
+            moreBtn.id = 'scanMoreBtn';
+            moreBtn.style.cssText = 'width:100%;margin-top:12px;justify-content:center;padding:12px;font-size:14px;';
+            moreBtn.textContent = '📦 もっと見る（残り' + (data.items.length - PAGE_SIZE) + '件）';
+            moreBtn.addEventListener('click', function() {
+                var current = window._scanShowCount || PAGE_SIZE;
+                renderScanCards(data.items, scanResults, current, PAGE_SIZE);
+                window._scanShowCount = current + PAGE_SIZE;
+                if (window._scanShowCount >= data.items.length) {
+                    moreBtn.remove();
+                } else {
+                    moreBtn.textContent = '📦 もっと見る（残り' + (data.items.length - window._scanShowCount) + '件）';
+                    scanResults.appendChild(moreBtn);
+                }
+            });
+            scanResults.appendChild(moreBtn);
+        }
     }
 
     // ===== イベントバインド =====
