@@ -92,6 +92,16 @@
       updateRateDisplay();
 
       searchResults = data.items || [];
+
+      // 翻訳情報を表示
+      const translatedInfo = document.getElementById('ebayTranslatedInfo');
+      if (data.translatedFrom && translatedInfo) {
+        translatedInfo.innerHTML = `🌐 「<b>${data.translatedFrom}</b>」→「<b>${data.searchKeyword}</b>」に翻訳して検索`;
+        translatedInfo.style.display = 'block';
+      } else if (translatedInfo) {
+        translatedInfo.style.display = 'none';
+      }
+
       renderResults(searchResults);
 
       // キャッシュ保存

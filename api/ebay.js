@@ -3,9 +3,40 @@
  * 商品検索と為替レート取得を提供する
  */
 
-// eBay APIキャッシュ
+// キャッシュ
 let tokenCache = { token: '', expiresAt: 0 };
 let rateCache = { rate: 0, expiresAt: 0 };
+let translateCache = {}; // 翻訳キャッシュ
+
+/**
+ * 日本語を含むか判定
+ */
+function containsJapanese(text) {
+  return /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/.test(text);
+}
+
+/**
+ * 日本語→英語に翻訳（MyMemory Translation API、無料）
+ */
+async function translateToEnglish(text) {
+  if (translateCache[text]) return translateCache[text];
+  
+  try {
+    const res = await fetch(
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ja|en`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const translated = data.responseData?.translatedText || text;
+      translateCache[text] = translated;
+      return translated;
+    }
+  } catch (e) {
+    console.error('翻訳失敗:', e.message);
+  }
+  return text; // 失敗時はそのまま
+}
 
 /**
  * eBay OAuth2.0 アクセストークンを取得
@@ -156,7 +187,16 @@ module.exports = async (req, res) => {
     // eBay検索
     if (!keyword) return res.status(400).json({ error: 'キーワードが必要です' });
 
-    const result = await searchEbay(keyword, {
+    // 日本語キーワードを自動翻訳
+    let searchKeyword = keyword;
+    let translatedFrom = null;
+    if (containsJapanese(keyword)) {
+      searchKeyword = await translateToEnglish(keyword);
+      translatedFrom = keyword;
+      console.log(`🌐 翻訳: "${keyword}" → "${searchKeyword}"`);
+    }
+
+    const result = await searchEbay(searchKeyword, {
       limit: parseInt(limit) || 30,
       sort: sort || 'price',
       marketplace: marketplace || 'EBAY_US',
@@ -165,7 +205,12 @@ module.exports = async (req, res) => {
     });
 
     const rate = await getExchangeRate();
-    return res.json({ ...result, exchangeRate: rate });
+    return res.json({ 
+      ...result, 
+      exchangeRate: rate,
+      searchKeyword,
+      translatedFrom,
+    });
 
   } catch (err) {
     console.error('eBay API エラー:', err);

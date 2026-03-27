@@ -1529,3 +1529,17 @@ body {
     .ebay-calc-row label { min-width: unset; }
     .ebay-cost-input, .ebay-ship-input { max-width: unset; }
 }
+
+/* eBay翻訳情報 */
+.ebay-translated-info {
+    background: rgba(116,185,255,.1);
+    border: 1px solid rgba(116,185,255,.25);
+    border-radius: 10px;
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--blue);
+}
+.ebay-translated-info b {
+    color: var(--text);
+}
