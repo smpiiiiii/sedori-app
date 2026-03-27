@@ -528,7 +528,8 @@
         // タブコンテンツ（存在するタブのみ切り替え）
         var sections = {
             'calc': 'calcSection',
-            'netsea': 'netseaSection'
+            'netsea': 'netseaSection',
+            'ebay': 'ebaySection'
         };
         for (var key in sections) {
             var el = document.getElementById(sections[key]);
@@ -540,6 +541,10 @@
         var csvBtn = document.getElementById('csvBtn');
         if (tabName === 'netsea') {
             title.textContent = '🏭 NETSEA卸売リサーチ';
+            addBtn.style.display = 'none';
+            csvBtn.style.display = 'none';
+        } else if (tabName === 'ebay') {
+            title.textContent = '🌍 eBayリサーチ';
             addBtn.style.display = 'none';
             csvBtn.style.display = 'none';
         } else {

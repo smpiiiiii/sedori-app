@@ -1249,3 +1249,283 @@ body {
     font-size: 13px;
     color: #ffd93d;
 }
+
+/* ===== eBayタブ ===== */
+.ebay-rate-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, rgba(0,184,148,.1), rgba(116,185,255,.1));
+    border: 1px solid rgba(0,184,148,.2);
+    border-radius: 12px;
+    padding: 12px 18px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    font-weight: 600;
+}
+.ebay-rate-value {
+    color: var(--green2);
+    font-weight: 900;
+    font-size: 16px;
+}
+
+.ebay-search-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+.ebay-search-card h3 { font-size: 15px; margin-bottom: 14px; }
+.ebay-search-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.ebay-filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.ebay-filter-item { flex: 1; }
+.ebay-filter-item label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text2);
+    margin-bottom: 4px;
+}
+.ebay-filter-item select {
+    width: 100%;
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+}
+.ebay-filter-item select:focus { border-color: var(--accent); }
+.ebay-tips {
+    font-size: 12px;
+    color: var(--text2);
+    padding: 8px 12px;
+    background: rgba(108,92,231,.06);
+    border-radius: 8px;
+}
+
+/* eBay統計バー */
+.ebay-stats-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.ebay-stat {
+    flex: 1;
+    min-width: 100px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    text-align: center;
+}
+.ebay-stat .label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+.ebay-stat .value {
+    display: block;
+    font-size: 18px;
+    font-weight: 900;
+    margin-top: 4px;
+}
+.ebay-stat .value.green { color: var(--green2); }
+
+/* eBay結果カード */
+.ebay-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.ebay-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex;
+    overflow: hidden;
+    transition: border-color .2s;
+}
+.ebay-card:hover { border-color: var(--accent); }
+
+.ebay-card-img {
+    width: 130px;
+    min-height: 130px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.ebay-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 8px;
+}
+.ebay-card-img .no-img {
+    font-size: 36px;
+    color: #ccc;
+}
+
+.ebay-card-body {
+    flex: 1;
+    padding: 14px 16px;
+    min-width: 0;
+}
+.ebay-card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 6px;
+    line-height: 1.4;
+}
+.ebay-card-title:hover { color: var(--accent2); }
+
+.ebay-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.ebay-condition {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+.badge-new { background: rgba(0,184,148,.15); color: var(--green2); }
+.badge-used { background: rgba(253,203,110,.15); color: var(--orange); }
+.badge-refurb { background: rgba(116,185,255,.15); color: var(--blue); }
+.badge-other { background: rgba(108,92,231,.15); color: var(--accent2); }
+.ebay-location, .ebay-seller {
+    font-size: 10px;
+    color: var(--text2);
+}
+
+.ebay-card-prices {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.ebay-price-usd {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--green2);
+}
+.ebay-price-jpy {
+    font-size: 13px;
+    color: var(--text2);
+}
+.ebay-shipping {
+    font-size: 11px;
+    color: var(--blue);
+    font-weight: 600;
+}
+
+/* eBay利益計算 */
+.ebay-profit-calc {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+.ebay-calc-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.ebay-calc-row label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text2);
+    min-width: 60px;
+}
+.ebay-cost-input, .ebay-ship-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    max-width: 140px;
+}
+.ebay-cost-input:focus, .ebay-ship-input:focus { border-color: var(--accent); }
+
+.ebay-profit-result {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+}
+.ebay-profit-result.profit-positive {
+    background: rgba(0,184,148,.12);
+    border: 1px solid rgba(0,184,148,.3);
+}
+.ebay-profit-result.profit-negative {
+    background: rgba(255,107,107,.1);
+    border: 1px solid rgba(255,107,107,.25);
+}
+.profit-main {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 900;
+}
+.profit-icon { font-size: 18px; }
+.profit-amount { font-size: 20px; }
+.profit-positive .profit-amount { color: var(--green2); }
+.profit-negative .profit-amount { color: var(--red); }
+.profit-rate { font-size: 13px; color: var(--text2); }
+.profit-detail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 6px;
+    font-size: 10px;
+    color: var(--text2);
+}
+
+/* eBayエラー/空 */
+.ebay-error, .ebay-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text2);
+}
+.ebay-error .icon, .ebay-empty .icon { font-size: 48px; margin-bottom: 12px; }
+
+/* eBayレスポンシブ */
+@media (max-width: 768px) {
+    .ebay-search-row { flex-direction: column; }
+    .ebay-filters { flex-direction: column; gap: 8px; }
+    .ebay-card { flex-direction: column; }
+    .ebay-card-img { width: 100%; height: 160px; }
+    .ebay-stats-bar { flex-wrap: wrap; }
+    .ebay-stat { min-width: 45%; }
+    .ebay-calc-row { flex-direction: column; align-items: stretch; }
+    .ebay-calc-row label { min-width: unset; }
+    .ebay-cost-input, .ebay-ship-input { max-width: unset; }
+}

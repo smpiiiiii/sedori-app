@@ -89,6 +89,7 @@
 <div class="tab-nav">
     <button class="tab-btn active" data-tab="calc" id="tabCalc">📊 利益計算</button>
     <button class="tab-btn" data-tab="netsea" id="tabNetsea">🏭 NETSEA</button>
+    <button class="tab-btn" data-tab="ebay" id="tabEbay">🌍 eBay</button>
 </div>
 
 <!-- ===== 利益計算タブ ===== -->
@@ -382,6 +383,55 @@
     </div>
 </div>
 
+<!-- ===== eBayタブ ===== -->
+<div class="content tab-content" id="ebaySection" style="display:none">
+    <!-- 為替レート表示 -->
+    <div class="ebay-rate-bar">
+        <span>💱 為替レート</span>
+        <span id="ebayRateDisplay" class="ebay-rate-value">$1 = ¥150.0</span>
+    </div>
+
+    <!-- 検索カード -->
+    <div class="ebay-search-card">
+        <h3>🌍 eBay相場検索</h3>
+        <div class="ebay-search-row">
+            <input type="text" id="ebayKeyword" placeholder="キーワード（例: Nintendo Switch, Pokemon cards）" class="research-input">
+            <button class="btn btn-primary" id="ebaySearchBtn">🔍 検索</button>
+        </div>
+        <div class="ebay-filters">
+            <div class="ebay-filter-item">
+                <label>マーケット</label>
+                <select id="ebayMarket">
+                    <option value="EBAY_US">🇺🇸 アメリカ</option>
+                    <option value="EBAY_GB">🇬🇧 イギリス</option>
+                    <option value="EBAY_DE">🇩🇪 ドイツ</option>
+                    <option value="EBAY_AU">🇦🇺 オーストラリア</option>
+                </select>
+            </div>
+            <div class="ebay-filter-item">
+                <label>並び順</label>
+                <select id="ebaySort">
+                    <option value="price">価格の安い順</option>
+                    <option value="-price">価格の高い順</option>
+                    <option value="newlyListed">新着順</option>
+                </select>
+            </div>
+        </div>
+        <div class="ebay-tips">
+            💡 英語キーワードが効果的（例: "Japanese anime figure"、"manga lot"）
+        </div>
+    </div>
+
+    <!-- 検索中 -->
+    <div id="ebayLoading" class="research-loading" style="display:none">
+        <div class="spinner"></div>
+        <p>eBay商品を検索中...</p>
+    </div>
+
+    <!-- 検索結果 -->
+    <div id="ebayResults"></div>
+</div>
+
 <!-- 商品追加モーダル -->
 <div class="modal-overlay hidden" id="addModal">
     <div class="modal">
@@ -504,6 +554,7 @@
 
 <script src="app.js"></script>
 <script src="netsea-tab.js"></script>
+<script src="ebay-tab.js"></script>
 <script src="barcode.js"></script>
 </body>
 </html>
